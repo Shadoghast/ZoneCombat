@@ -1,0 +1,11 @@
+/* Zone Combat styles. Declare layers first (DESIGN.md / Foundry v13+ cascade). */
+@layer zone-combat-base, zone-combat-components, zone-combat-overrides;
+
+:root {
+  --zone-combat-pending-opacity: 0.5; /* provisional / mid-turn styling, DESIGN.md §6.8 */
+}
+
+@layer zone-combat-components {
+  /* Reserved for future HTML UI (band editor, change-log panel). The shell overlay
+     itself is drawn with PIXI on the canvas layer, not via CSS. */
+}

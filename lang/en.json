@@ -1,0 +1,23 @@
+{
+  "ZONECOMBAT.Band.Close": "Close",
+  "ZONECOMBAT.Band.Near": "Near",
+  "ZONECOMBAT.Band.Medium": "Medium",
+  "ZONECOMBAT.Band.Long": "Long",
+  "ZONECOMBAT.Band.Far": "Far",
+
+  "ZONECOMBAT.Control.Toggle": "Toggle Zone Combat overlay",
+
+  "ZONECOMBAT.Settings.OverlayEnabled": "Show zone overlay",
+  "ZONECOMBAT.Settings.FarNominal": "Far nominal distance (ft)",
+
+  "ZONECOMBAT.Settings.Weight.close": "Visual weight — Close",
+  "ZONECOMBAT.Settings.Weight.near": "Visual weight — Near",
+  "ZONECOMBAT.Settings.Weight.medium": "Visual weight — Medium",
+  "ZONECOMBAT.Settings.Weight.long": "Visual weight — Long",
+  "ZONECOMBAT.Settings.Weight.far": "Visual weight — Far",
+
+  "ZONECOMBAT.Settings.Threshold.close": "Distance threshold — Close (ft)",
+  "ZONECOMBAT.Settings.Threshold.near": "Distance threshold — Near (ft)",
+  "ZONECOMBAT.Settings.Threshold.medium": "Distance threshold — Medium (ft)",
+  "ZONECOMBAT.Settings.Threshold.long": "Distance threshold — Long (ft)"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "zone-combat",
+  "title": "Zone Combat",
+  "description": "Relative range-band combat for Foundry VTT — concentric zone shells around the active token instead of measured grid movement.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14"
+  },
+  "authors": [
+    { "name": "Shadoghast" }
+  ],
+  "esmodules": ["zone-combat.mjs"],
+  "styles": ["styles/zone-combat.css"],
+  "languages": [
+    { "lang": "en", "name": "English", "path": "lang/en.json" }
+  ],
+  "url": "https://github.com/Shadoghast/ZoneCombat",
+  "manifest": "https://github.com/Shadoghast/ZoneCombat/releases/latest/download/module.json",
+  "download": "https://github.com/Shadoghast/ZoneCombat/releases/download/v0.1.0/module.zip",
+  "socket": false
+}
