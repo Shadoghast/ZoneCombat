@@ -29,6 +29,15 @@ export function registerSettings() {
     range: { min: 1, max: 10, step: 1 }, default: 4
   });
 
+  // Colour of the bold zone-boundary lines (native colour picker).
+  game.settings.register(NS, "boundaryColor", {
+    name: "ZONECOMBAT.Settings.BoundaryColor",
+    hint: "ZONECOMBAT.Settings.BoundaryColorHint",
+    scope: "world", config: true,
+    type: new foundry.data.fields.ColorField({ required: true, nullable: false }),
+    default: "#f3f1ff"
+  });
+
   // Distance unit: feet or grid spaces (DESIGN.md §4.2).
   game.settings.register(NS, "unit", {
     name: "ZONECOMBAT.Settings.Unit",
@@ -85,6 +94,23 @@ export function getFillAlpha() {
 export function getBoundaryWidth() {
   const v = safeGet("boundaryWidth");
   return Number.isFinite(v) && v > 0 ? v : 4;
+}
+
+/** Bold zone-boundary line colour as a 0xRRGGBB number. */
+export function getBoundaryColor() {
+  return hexToNumber(safeGet("boundaryColor"), 0xf3f1ff);
+}
+
+function hexToNumber(value, fallback) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (value && typeof value.valueOf === "function" && typeof value.valueOf() === "number") {
+    return value.valueOf();
+  }
+  if (typeof value === "string") {
+    const n = parseInt(value.replace(/^#/, ""), 16);
+    if (Number.isFinite(n)) return n;
+  }
+  return fallback;
 }
 
 /** Selected distance unit key ("feet" | "spaces"). */

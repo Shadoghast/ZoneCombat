@@ -10,7 +10,7 @@
  * and edit/anchor markers stay on this (interface) layer, ABOVE tokens.
  */
 import { ZONE_COMBAT } from "./config.mjs";
-import { getFillAlpha, getThresholds, getBoundaryWidth } from "./settings.mjs";
+import { getFillAlpha, getThresholds, getBoundaryWidth, getBoundaryColor } from "./settings.mjs";
 import { getFocalTokenId, getEditedEdges } from "./turn.mjs";
 import { getMatrix } from "./store.mjs";
 import { originPoint, pixelsPerUnit, cellSize } from "./integration.mjs";
@@ -102,6 +102,7 @@ export class ZoneCombatLayer extends CanvasLayerBase {
       Number.isFinite(v) ? v * ppu : (thresholds[i - 1] * ppu + 2 * cellSize()));
 
     const boundaryWidth = getBoundaryWidth();
+    const boundaryColor = getBoundaryColor();
     const gridType = canvas.grid?.type ?? CONST.GRID_TYPES.GRIDLESS;
     const zones = gridType !== CONST.GRID_TYPES.GRIDLESS ? computeZones(canvas.scene) : null;
 
@@ -114,7 +115,7 @@ export class ZoneCombatLayer extends CanvasLayerBase {
         g.endFill();
       }
       // Bold zone boundaries: edges where the band changes or the zone ends.
-      g.lineStyle(boundaryWidth, BORDER_COLOR, BORDER_ALPHA);
+      g.lineStyle(boundaryWidth, boundaryColor, BORDER_ALPHA);
       for (const [x1, y1, x2, y2] of zones.boundaries) {
         g.moveTo(x1, y1);
         g.lineTo(x2, y2);
@@ -132,7 +133,7 @@ export class ZoneCombatLayer extends CanvasLayerBase {
       }
       for (let i = 0; i < bands.length; i++) {
         if (!Number.isFinite(thresholds[i])) continue;
-        g.lineStyle(boundaryWidth, BORDER_COLOR, BORDER_ALPHA);
+        g.lineStyle(boundaryWidth, boundaryColor, BORDER_ALPHA);
         g.drawCircle(center.x, center.y, outerR[i]);
       }
     }
