@@ -13,9 +13,17 @@ import { getFocalTokenId } from "./turn.mjs";
 // CanvasLayer namespaced under foundry.canvas.layers in v13+; fall back defensively.
 const CanvasLayerBase = foundry?.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer;
 
+// Crisp boundary line drawn between rings so adjacent zones — especially the dark
+// inner ones whose fills are similar — read as clearly separated creases.
+const BORDER_COLOR = 0xf3f1ff;
+const BORDER_ALPHA = 0.9;
+
 export class ZoneCombatLayer extends CanvasLayerBase {
   /** @type {PIXI.Graphics|null} */
   shells = null;
+
+  /** @type {PIXI.Container|null} */
+  labels = null;
 
   /** Overlay visibility toggle (scene control + client setting). */
   _enabled = true;
@@ -28,6 +36,7 @@ export class ZoneCombatLayer extends CanvasLayerBase {
   async _draw(options) {
     await super._draw?.(options);
     this.shells = this.addChild(new PIXI.Graphics());
+    this.labels = this.addChild(new PIXI.Container()); // drawn above the shells
     this._enabled = this._readEnabled();
     this.requestRedraw();
   }
@@ -36,6 +45,7 @@ export class ZoneCombatLayer extends CanvasLayerBase {
   async _tearDown(options) {
     this.removeChildren().forEach(c => c.destroy({ children: true }));
     this.shells = null;
+    this.labels = null;
     await super._tearDown?.(options);
   }
 
@@ -64,6 +74,7 @@ export class ZoneCombatLayer extends CanvasLayerBase {
   _redraw() {
     const g = this.shells;
     g.clear();
+    this._clearLabels();
     if (!this._enabled) return;
 
     const token = this._focalToken();
@@ -74,13 +85,23 @@ export class ZoneCombatLayer extends CanvasLayerBase {
     const radii = this._schematicRadii();
     const gridType = canvas.grid?.type ?? CONST.GRID_TYPES.GRIDLESS;
 
-    // Outermost first so inner bands paint on top (DESIGN.md §3).
+    // Pass 1 — fills only, outermost first so inner bands paint on top (DESIGN.md §3).
     for (let i = bands.length - 1; i >= 0; i--) {
+      g.lineStyle(0);
       g.beginFill(bands[i].color, 0.18);
-      g.lineStyle(2, bands[i].color, 0.9);
       this._drawShape(g, center, radii[i], gridType);
       g.endFill();
     }
+
+    // Pass 2 — crisp boundary lines on top of every ring edge, so the creases between
+    // zones (especially the innermost) are clearly visible regardless of fill colour.
+    for (let i = bands.length - 1; i >= 0; i--) {
+      g.lineStyle(2, BORDER_COLOR, BORDER_ALPHA);
+      this._drawShape(g, center, radii[i], gridType);
+    }
+
+    // Labels — one per zone, placed within each band's annulus.
+    this._drawLabels(center, bands, radii);
   }
 
   /** Normalised cumulative radii (px) from per-band visual weights (DESIGN.md §4.1). */
@@ -120,5 +141,33 @@ export class ZoneCombatLayer extends CanvasLayerBase {
       pts.push(center.x + radius * Math.cos(a), center.y + radius * Math.sin(a));
     }
     g.drawPolygon(pts);
+  }
+
+  _clearLabels() {
+    if (this.labels) this.labels.removeChildren().forEach(c => c.destroy());
+  }
+
+  /** Draw a text label for each zone, stacked upward within each band's annulus. */
+  _drawLabels(center, bands, radii) {
+    if (!this.labels) return;
+    const size = canvas.dimensions?.size ?? 100;
+    const fontSize = Math.max(12, Math.round(size * 0.22));
+    const style = {
+      fontFamily: "Signika, sans-serif",
+      fontSize,
+      fill: 0xffffff,
+      stroke: 0x111111,
+      strokeThickness: Math.max(2, Math.round(fontSize / 5)),
+      align: "center"
+    };
+    for (let i = 0; i < bands.length; i++) {
+      const inner = i === 0 ? 0 : radii[i - 1];
+      const mid = (inner + radii[i]) / 2;
+      const text = game.i18n?.localize?.(bands[i].label) ?? bands[i].key;
+      const t = new PIXI.Text(text, style);
+      t.anchor.set(0.5);
+      t.position.set(center.x, center.y - mid); // stacked along the top axis
+      this.labels.addChild(t);
+    }
   }
 }
