@@ -21,6 +21,14 @@ export function registerSettings() {
     range: { min: 0, max: 0.5, step: 0.02 }, default: 0.1
   });
 
+  // Thickness (px) of the bold lines drawn between zones and around the outer edge.
+  game.settings.register(NS, "boundaryWidth", {
+    name: "ZONECOMBAT.Settings.BoundaryWidth",
+    hint: "ZONECOMBAT.Settings.BoundaryWidthHint",
+    scope: "world", config: true, type: Number,
+    range: { min: 1, max: 10, step: 1 }, default: 4
+  });
+
   // Distance unit: feet or grid spaces (DESIGN.md §4.2).
   game.settings.register(NS, "unit", {
     name: "ZONECOMBAT.Settings.Unit",
@@ -71,6 +79,12 @@ export function registerSettings() {
 export function getFillAlpha() {
   const v = safeGet("fillAlpha");
   return Number.isFinite(v) ? v : 0.1;
+}
+
+/** Bold zone-boundary line width in px. */
+export function getBoundaryWidth() {
+  const v = safeGet("boundaryWidth");
+  return Number.isFinite(v) && v > 0 ? v : 4;
 }
 
 /** Selected distance unit key ("feet" | "spaces"). */

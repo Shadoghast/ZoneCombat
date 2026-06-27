@@ -40,8 +40,40 @@ function cellPolygon(grid, offset, center) {
   ];
 }
 
+function edgeKey(x1, y1, x2, y2) {
+  const a = `${Math.round(x1)},${Math.round(y1)}`;
+  const b = `${Math.round(x2)},${Math.round(y2)}`;
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
 /**
- * @returns {Array<{points:number[], color:number, band:string}>|null}
+ * Boundary edges = cell edges where the band changes, or the outer perimeter (an edge
+ * used by only one tiled cell). These get the bold stroke. Interior edges within a single
+ * zone are skipped. Returns a flat list of segments [x1,y1,x2,y2].
+ */
+function computeBoundaries(tiles) {
+  const edges = new Map();
+  for (const t of tiles) {
+    const p = t.points;
+    const n = p.length / 2;
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      const x1 = p[2 * i], y1 = p[2 * i + 1], x2 = p[2 * j], y2 = p[2 * j + 1];
+      const key = edgeKey(x1, y1, x2, y2);
+      const e = edges.get(key) ?? { x1, y1, x2, y2, count: 0, bands: new Set() };
+      e.count++; e.bands.add(t.band);
+      edges.set(key, e);
+    }
+  }
+  const out = [];
+  for (const e of edges.values()) {
+    if (e.count === 1 || e.bands.size > 1) out.push([e.x1, e.y1, e.x2, e.y2]);
+  }
+  return out;
+}
+
+/**
+ * @returns {{tiles:Array<{points:number[],color:number,band:string}>, boundaries:number[][]}|null}
  *   null when gridless (caller falls back to smooth rings).
  */
 export function computeZones(scene = canvas?.scene) {
@@ -60,7 +92,7 @@ export function computeZones(scene = canvas?.scene) {
     scene?.id, grid.type, grid.size, origin.x.toFixed(1), origin.y.toFixed(1),
     thresholds.join(","), unit
   ].join("|");
-  if (_cache && _cache.key === key) return _cache.tiles;
+  if (_cache && _cache.key === key) return _cache.result;
 
   let o;
   try { o = grid.getOffset(origin); } catch (_) { return null; }
@@ -84,6 +116,7 @@ export function computeZones(scene = canvas?.scene) {
     }
   }
 
-  _cache = { key, tiles };
-  return tiles;
+  const result = { tiles, boundaries: computeBoundaries(tiles) };
+  _cache = { key, result };
+  return result;
 }

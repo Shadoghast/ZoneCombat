@@ -10,6 +10,8 @@
   "ZONECOMBAT.Settings.OverlayEnabled": "Show zone overlay",
   "ZONECOMBAT.Settings.FillAlpha": "Zone fill opacity",
   "ZONECOMBAT.Settings.FillAlphaHint": "How solid the zone fills are. Lower = more of the map shows through. 0 hides the fills entirely (rings still outlined).",
+  "ZONECOMBAT.Settings.BoundaryWidth": "Zone boundary thickness",
+  "ZONECOMBAT.Settings.BoundaryWidthHint": "Thickness (px) of the bold lines drawn between zones and around the outer edge.",
   "ZONECOMBAT.Settings.Unit": "Distance unit",
   "ZONECOMBAT.Settings.UnitHint": "Measure band distances in feet (scene units) or grid spaces. Thresholds use this unit.",
   "ZONECOMBAT.Unit.feet": "Feet",

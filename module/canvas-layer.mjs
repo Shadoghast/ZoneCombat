@@ -10,7 +10,7 @@
  * and edit/anchor markers stay on this (interface) layer, ABOVE tokens.
  */
 import { ZONE_COMBAT } from "./config.mjs";
-import { getFillAlpha, getThresholds } from "./settings.mjs";
+import { getFillAlpha, getThresholds, getBoundaryWidth } from "./settings.mjs";
 import { getFocalTokenId, getEditedEdges } from "./turn.mjs";
 import { getMatrix } from "./store.mjs";
 import { originPoint, pixelsPerUnit, cellSize } from "./integration.mjs";
@@ -101,17 +101,23 @@ export class ZoneCombatLayer extends CanvasLayerBase {
     const outerR = thresholds.map((v, i) =>
       Number.isFinite(v) ? v * ppu : (thresholds[i - 1] * ppu + 2 * cellSize()));
 
+    const boundaryWidth = getBoundaryWidth();
     const gridType = canvas.grid?.type ?? CONST.GRID_TYPES.GRIDLESS;
-    const tiles = gridType !== CONST.GRID_TYPES.GRIDLESS ? computeZones(canvas.scene) : null;
+    const zones = gridType !== CONST.GRID_TYPES.GRIDLESS ? computeZones(canvas.scene) : null;
 
-    if (tiles && tiles.length) {
-      // True-scale tiled grid cells (honeycomb).
-      const edge = Math.min(1, fillAlpha + 0.5);
-      for (const t of tiles) {
-        g.lineStyle(1, t.color, edge);
+    if (zones && zones.tiles.length) {
+      // True-scale tiled grid cells (honeycomb): fills + faint interior hex lines.
+      for (const t of zones.tiles) {
+        g.lineStyle(1, t.color, Math.min(1, fillAlpha + 0.2));
         g.beginFill(t.color, fillAlpha);
         g.drawPolygon(t.points);
         g.endFill();
+      }
+      // Bold zone boundaries: edges where the band changes or the zone ends.
+      g.lineStyle(boundaryWidth, BORDER_COLOR, BORDER_ALPHA);
+      for (const [x1, y1, x2, y2] of zones.boundaries) {
+        g.moveTo(x1, y1);
+        g.lineTo(x2, y2);
       }
     } else {
       // Gridless fallback: smooth concentric rings (Close..Long) at true scale.
@@ -126,7 +132,7 @@ export class ZoneCombatLayer extends CanvasLayerBase {
       }
       for (let i = 0; i < bands.length; i++) {
         if (!Number.isFinite(thresholds[i])) continue;
-        g.lineStyle(2, BORDER_COLOR, BORDER_ALPHA);
+        g.lineStyle(boundaryWidth, BORDER_COLOR, BORDER_ALPHA);
         g.drawCircle(center.x, center.y, outerR[i]);
       }
     }
