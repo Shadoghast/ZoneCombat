@@ -10,6 +10,7 @@ import * as turn from "./module/turn.mjs";
 import * as store from "./module/store.mjs";
 import * as integration from "./module/integration.mjs";
 import * as drag from "./module/drag.mjs";
+import * as background from "./module/background.mjs";
 
 // Expose a small public API for debugging / future use.
 globalThis.zoneCombat = { config: ZONE_COMBAT, ZoneCombatLayer, turn, store };
@@ -48,6 +49,11 @@ Hooks.on("deleteToken", async (tokenDoc) => {
 // Geometry-seed the matrix when tokens are added or a scene becomes active (§8.1).
 Hooks.on("createToken", (tokenDoc) => integration.seedMissingPairs(tokenDoc?.parent));
 Hooks.on("canvasReady", () => integration.seedMissingPairs(canvas?.scene));
+
+// Per-scene background dimming so zone tiles read clearly over the map.
+Hooks.on("renderSceneConfig", (app, html) => background.injectSceneConfig(app, html));
+Hooks.on("canvasReady", () => background.applyBackgroundOpacity(canvas?.scene));
+Hooks.on("updateScene", (scene) => background.applyBackgroundOpacity(scene));
 
 // Interpret a user drag as a relational edit (DESIGN.md §7 bidirectional).
 Hooks.on("updateToken", (doc, change, options, userId) => drag.onTokenMoved(doc, change, options, userId));
