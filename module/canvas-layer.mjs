@@ -9,6 +9,7 @@
 import { ZONE_COMBAT } from "./config.mjs";
 import { getVisualWeights } from "./settings.mjs";
 import { getFocalTokenId } from "./turn.mjs";
+import { schematicRadii } from "./geometry.mjs";
 
 // CanvasLayer namespaced under foundry.canvas.layers in v13+; fall back defensively.
 const CanvasLayerBase = foundry?.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer;
@@ -106,11 +107,8 @@ export class ZoneCombatLayer extends CanvasLayerBase {
 
   /** Normalised cumulative radii (px) from per-band visual weights (DESIGN.md §4.1). */
   _schematicRadii() {
-    const weights = getVisualWeights();
-    const total = weights.reduce((a, b) => a + b, 0) || 1;
     const maxRadius = (canvas.dimensions?.size ?? 100) * 8; // base schematic extent
-    let acc = 0;
-    return weights.map(w => { acc += w; return (acc / total) * maxRadius; });
+    return schematicRadii(getVisualWeights(), maxRadius);
   }
 
   _drawShape(g, center, radius, gridType) {

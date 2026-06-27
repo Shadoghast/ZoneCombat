@@ -31,6 +31,14 @@ export function registerSettings() {
     name: "ZONECOMBAT.Settings.FarNominal",
     scope: "world", config: true, type: Number, default: ZONE_COMBAT.defaults.farNominalFeet
   });
+
+  // When on, the end-of-turn commit moves tokens into their solved ring positions
+  // (DESIGN.md §7). Off by default so the module never rearranges a map unexpectedly.
+  game.settings.register(NS, "applyLayout", {
+    name: "ZONECOMBAT.Settings.ApplyLayout",
+    hint: "ZONECOMBAT.Settings.ApplyLayoutHint",
+    scope: "world", config: true, type: Boolean, default: false
+  });
 }
 
 /** Per-band visual weights, inner → outer (DESIGN.md §4.1). */

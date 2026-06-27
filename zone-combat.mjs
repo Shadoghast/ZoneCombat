@@ -8,6 +8,7 @@ import { registerSettings } from "./module/settings.mjs";
 import { ZoneCombatLayer } from "./module/canvas-layer.mjs";
 import * as turn from "./module/turn.mjs";
 import * as store from "./module/store.mjs";
+import * as integration from "./module/integration.mjs";
 
 // Expose a small public API for debugging / future use.
 globalThis.zoneCombat = { config: ZONE_COMBAT, ZoneCombatLayer, turn, store };
@@ -42,6 +43,10 @@ Hooks.on("deleteToken", async (tokenDoc) => {
   const matrix = store.pruneToken(store.getMatrix(scene), tokenDoc.id);
   await store.setMatrix(scene, matrix);
 });
+
+// Geometry-seed the matrix when tokens are added or a scene becomes active (§8.1).
+Hooks.on("createToken", (tokenDoc) => integration.seedMissingPairs(tokenDoc?.parent));
+Hooks.on("canvasReady", () => integration.seedMissingPairs(canvas?.scene));
 
 // Turn recenter (DESIGN.md §6.3): the active combatant becomes the focal token.
 Hooks.on("updateCombat", (combat, changed) => turn.onUpdateCombat(combat, changed));

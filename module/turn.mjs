@@ -1,11 +1,15 @@
 /**
- * Zone Combat — turn recenter & batched commit (DESIGN.md §6.3, §6.8).
+ * Zone Combat — turn recenter & batched commit (DESIGN.md §6.3, §6.8, §8.4).
  *
- * Skeleton: tracks the focal token (active combatant, falling back to the controlled
- * token in the canvas layer). The batched end-of-turn repair/commit will hang off the
- * combat-advance path here once propagation/layout land.
+ * Tracks the focal token (active combatant) and the set of edges edited during the
+ * current turn. On combat advance it commits the OUTGOING turn (repair + persist +
+ * optional re-layout), discards interrupted edits, then recenters on the new active
+ * token.
  */
+import * as integration from "./integration.mjs";
+
 let _focalTokenId = null;
+let _editedThisTurn = new Set();
 
 /** The token the diagram is currently centered on, if any. */
 export function getFocalTokenId() {
@@ -17,12 +21,36 @@ export function setFocalToken(id) {
   canvas?.zoneCombat?.requestRedraw?.();
 }
 
-/** When the active combatant changes, recenter on its token (DESIGN.md §6.3). */
-export function onUpdateCombat(combat, changed) {
-  // `turn`/`round` changing implies a new active combatant.
+/** Mark a pair as edited this turn (called by the drag handler). */
+export function markEdited(pairKey) {
+  _editedThisTurn.add(pairKey);
+}
+
+export function clearEdits() {
+  _editedThisTurn = new Set();
+}
+
+export function getEditedEdges() {
+  return [..._editedThisTurn];
+}
+
+/**
+ * On combat advance, commit the outgoing turn then recenter (DESIGN.md §6.3).
+ * Interrupted/active-token-death edits are discarded by the same clear (§8.4).
+ */
+export async function onUpdateCombat(combat, changed) {
   if (!("turn" in (changed ?? {}) || "round" in (changed ?? {}))) return;
-  const tokenId = combat?.combatant?.tokenId ?? null;
-  setFocalToken(tokenId);
-  // TODO(turn): run batched end-of-turn repair (§6.4) + re-layout (§7) for the
-  // outgoing turn before recentering, and surface propagated changes (§6.5).
+
+  const scene = canvas?.scene;
+  const outgoing = _focalTokenId;
+  if (scene && game.user?.isGM && outgoing) {
+    try {
+      await integration.commitTurn(scene, outgoing, getEditedEdges());
+    } catch (err) {
+      console.error("Zone Combat | end-of-turn commit failed", err);
+    }
+  }
+  clearEdits();
+
+  setFocalToken(combat?.combatant?.tokenId ?? null);
 }

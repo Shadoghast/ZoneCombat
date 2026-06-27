@@ -9,6 +9,8 @@
 
   "ZONECOMBAT.Settings.OverlayEnabled": "Show zone overlay",
   "ZONECOMBAT.Settings.FarNominal": "Far nominal distance (ft)",
+  "ZONECOMBAT.Settings.ApplyLayout": "Auto-arrange tokens into zones",
+  "ZONECOMBAT.Settings.ApplyLayoutHint": "When enabled, advancing a turn moves tokens into their solved ring positions. Off by default.",
 
   "ZONECOMBAT.Settings.Weight.close": "Visual weight — Close",
   "ZONECOMBAT.Settings.Weight.near": "Visual weight — Near",
