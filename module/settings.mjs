@@ -32,12 +32,12 @@ export function registerSettings() {
     scope: "world", config: true, type: Number, default: ZONE_COMBAT.defaults.farNominalFeet
   });
 
-  // When on, the end-of-turn commit moves tokens into their solved ring positions
-  // (DESIGN.md §7). Off by default so the module never rearranges a map unexpectedly.
+  // Static zone map: arrange tokens into the rings (active token to scene centre) when a
+  // turn begins (DESIGN.md §3 static map, §7). On by default — this is the core behavior.
   game.settings.register(NS, "applyLayout", {
     name: "ZONECOMBAT.Settings.ApplyLayout",
     hint: "ZONECOMBAT.Settings.ApplyLayoutHint",
-    scope: "world", config: true, type: Boolean, default: false
+    scope: "world", config: true, type: Boolean, default: true
   });
 
   // Whisper a summary of propagated band changes to GMs at end of turn (§6.5).

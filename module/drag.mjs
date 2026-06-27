@@ -13,7 +13,7 @@ import * as store from "./store.mjs";
 import { getFocalTokenId, markEdited } from "./turn.mjs";
 import { representativeDistance } from "./bands.mjs";
 import { getFarNominal } from "./settings.mjs";
-import { computeRadii, measureFeet, isApplyingLayout } from "./integration.mjs";
+import { computeRadii, measureFeet, isApplyingLayout, sceneCenter } from "./integration.mjs";
 
 /** Band key whose schematic ring contains a pixel distance, or null if beyond the diagram. */
 function ringBand(distPx, radii) {
@@ -50,10 +50,12 @@ export async function onTokenMoved(tokenDoc, change, options, userId) {
   if (!focalId || id === focalId) {
     rederiveRow(scene, matrix, id);                     // focal reposition → geometric
   } else {
-    const focal = canvas.tokens?.get(focalId);
     const moved = canvas.tokens?.get(id);
-    if (!focal || !moved) return;
-    const d = Math.hypot(focal.center.x - moved.center.x, focal.center.y - moved.center.y);
+    if (!moved) return;
+    // The active token sits at the scene centre, so the band is read from the dropped
+    // token's distance to that fixed centre (the static zone map).
+    const origin = sceneCenter();
+    const d = Math.hypot(origin.x - moved.center.x, origin.y - moved.center.y);
     const band = ringBand(d, computeRadii());
     if (band) {
       const key = store.pairKey(focalId, id);

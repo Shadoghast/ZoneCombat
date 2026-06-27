@@ -9,8 +9,8 @@
 
   "ZONECOMBAT.Settings.OverlayEnabled": "Show zone overlay",
   "ZONECOMBAT.Settings.FarNominal": "Far nominal distance (ft)",
-  "ZONECOMBAT.Settings.ApplyLayout": "Auto-arrange tokens into zones",
-  "ZONECOMBAT.Settings.ApplyLayoutHint": "When enabled, advancing a turn moves tokens into their solved ring positions. Off by default.",
+  "ZONECOMBAT.Settings.ApplyLayout": "Arrange tokens into the zone map",
+  "ZONECOMBAT.Settings.ApplyLayoutHint": "When a turn begins, move the active token to the scene-center zone map and arrange the others into their rings. On by default.",
   "ZONECOMBAT.Settings.LogChanges": "Post range changes to chat",
   "ZONECOMBAT.Settings.LogChangesHint": "Whisper a summary of band changes to GMs when a turn ends.",
 

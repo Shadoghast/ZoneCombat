@@ -10,6 +10,7 @@ import { getVisualWeights, getThresholds } from "./settings.mjs";
 import { bandForDistance } from "./bands.mjs";
 import { planCommit } from "./commit.mjs";
 import { summarizeChanges } from "./changelog.mjs";
+import { solveLayout, buildPairTargets, bandPixelIntervals } from "./layout.mjs";
 
 const MAX_LOG = 200;
 
@@ -20,6 +21,16 @@ export function isApplyingLayout() { return _applyingLayout; }
 
 export function cellSize() {
   return canvas?.dimensions?.size ?? 100;
+}
+
+/** Fixed anchor for the static zone map: the centre of the scene rectangle (§3, static map). */
+export function sceneCenter() {
+  const d = canvas?.dimensions;
+  if (!d) return { x: 0, y: 0 };
+  if (d.sceneX != null && d.sceneWidth != null) {
+    return { x: d.sceneX + d.sceneWidth / 2, y: d.sceneY + d.sceneHeight / 2 };
+  }
+  return { x: (d.width ?? 0) / 2, y: (d.height ?? 0) / 2 };
 }
 
 export function computeRadii() {
@@ -112,8 +123,31 @@ export async function commitTurn(scene, outgoingFocalId, editedEdges = []) {
   });
 
   postChangeLog(scene, plan.changes);
-  if (safeGet("applyLayout")) await applyPositions(scene, plan.positions, nodes);
   return plan;
+}
+
+/**
+ * Arrange tokens into the STATIC zone map (§3 static map): pin the active token at the
+ * scene centre and place everyone else into their rings around it, then move the tokens.
+ * The map itself does not move — the tokens move into it.
+ */
+export async function arrangeForFocal(scene, focalId) {
+  if (!scene || !focalId || !game.user?.isGM) return;
+  if (!safeGet("applyLayout")) return;
+
+  const origin = sceneCenter();
+  const matrix = store.getMatrix(scene);
+  const dead = new Set(matrix.deadAnchors ?? []);
+
+  const nodes = sceneTokens(scene).map(td => {
+    if (td.id === focalId) return { id: td.id, x: origin.x, y: origin.y, pinned: true };
+    const c = tokenCenter(td);
+    return { id: td.id, x: c.x, y: c.y, pinned: dead.has(td.id) };
+  });
+
+  const targets = buildPairTargets(matrix, bandForDistance, bandPixelIntervals(computeRadii()));
+  const { positions } = solveLayout(nodes, targets);
+  await applyPositions(scene, positions);
 }
 
 /** Whisper a summary of band-level changes to GMs (DESIGN.md §6.5). */
@@ -142,16 +176,15 @@ export function isDeadAnchor(scene, tokenId) {
   return (store.getMatrix(scene).deadAnchors ?? []).includes(tokenId);
 }
 
-async function applyPositions(scene, positions, nodes) {
+async function applyPositions(scene, positions) {
   const updates = [];
-  for (const n of nodes) {
-    if (n.pinned) continue;
-    const p = positions[n.id];
-    if (!p) continue;
-    const t = canvas.tokens?.get(n.id);
+  for (const [id, p] of Object.entries(positions)) {
+    const t = canvas.tokens?.get(id);
     const w = t?.w ?? cellSize();
     const h = t?.h ?? cellSize();
-    updates.push({ _id: n.id, x: Math.round(p.x - w / 2), y: Math.round(p.y - h / 2) });
+    const cur = t?.center ?? { x: p.x, y: p.y };
+    if (Math.hypot(cur.x - p.x, cur.y - p.y) < 1) continue; // already there → don't move
+    updates.push({ _id: id, x: Math.round(p.x - w / 2), y: Math.round(p.y - h / 2) });
   }
   if (!updates.length) return;
   _applyingLayout = true;

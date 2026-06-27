@@ -61,6 +61,7 @@ Hooks.on("updateCombatant", (combatant, change) => {
 
 // Turn recenter (DESIGN.md §6.3): the active combatant becomes the focal token.
 Hooks.on("updateCombat", (combat, changed) => turn.onUpdateCombat(combat, changed));
+Hooks.on("combatStart", (combat) => turn.onCombatStart(combat));
 
 // Scene control toggle for the overlay (skeleton; defensive across v13/v14 shapes).
 Hooks.on("getSceneControlButtons", (controls) => {

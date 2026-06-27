@@ -55,5 +55,23 @@ export async function onUpdateCombat(combat, changed) {
   // Never recenter the diagram on a dead/inert anchor (DESIGN.md §8.3).
   const nextId = combat?.combatant?.tokenId ?? null;
   const isDead = nextId && scene ? integration.isDeadAnchor(scene, nextId) : false;
-  setFocalToken(isDead ? null : nextId);
+  const focal = isDead ? null : nextId;
+  setFocalToken(focal);
+
+  // Static map: move the new active token to scene centre and arrange others around it.
+  if (scene && game.user?.isGM && focal) {
+    try { await integration.arrangeForFocal(scene, focal); }
+    catch (err) { console.error("Zone Combat | arrange failed", err); }
+  }
+}
+
+/** Begin-of-combat: center on the first combatant and arrange (DESIGN.md §6.3). */
+export async function onCombatStart(combat) {
+  const scene = canvas?.scene;
+  const focal = combat?.combatant?.tokenId ?? null;
+  setFocalToken(focal);
+  if (scene && game.user?.isGM && focal) {
+    try { await integration.arrangeForFocal(scene, focal); }
+    catch (err) { console.error("Zone Combat | arrange failed", err); }
+  }
 }

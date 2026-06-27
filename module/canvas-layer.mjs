@@ -11,6 +11,7 @@ import { getVisualWeights } from "./settings.mjs";
 import { getFocalTokenId, getEditedEdges } from "./turn.mjs";
 import { schematicRadii } from "./geometry.mjs";
 import { getMatrix } from "./store.mjs";
+import { sceneCenter } from "./integration.mjs";
 
 // Per-zone fill opacity. Each zone is drawn as a single ring (annulus), so fills do
 // NOT stack — keeps the focal token and nearby tokens clearly visible.
@@ -87,10 +88,8 @@ export class ZoneCombatLayer extends CanvasLayerBase {
     this._clearLabels();
     if (!this._enabled) return;
 
-    const token = this._focalToken();
-    if (!token) return;
-
-    const center = token.center;
+    // Static zone map: always anchored at the scene centre, never following a token.
+    const center = sceneCenter();
     const bands = ZONE_COMBAT.bands;
     const radii = this._schematicRadii();
     const gridType = canvas.grid?.type ?? CONST.GRID_TYPES.GRIDLESS;
