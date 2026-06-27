@@ -20,36 +20,40 @@ export function applyBackgroundOpacity(scene = canvas?.scene) {
   try { bg.alpha = getBgOpacity(scene); } catch (_) { /* ignore */ }
 }
 
-/** Inject the slider into the Scene config form (works for jQuery or HTMLElement). */
+/**
+ * Inject the slider into the Scene config form (Foundry v13/v14 ApplicationV2).
+ * The render hook can fire before the tab parts exist, so we de-dupe by *removing* any
+ * prior injection and re-inserting against the fully-rendered DOM (`app.element`) — that
+ * way the final placement is always correct, next to the Background Image field.
+ */
 export function injectSceneConfig(app, html) {
   const scene = app?.document ?? app?.object;
-  if (!scene) return;
-  const root = html?.[0] ?? html;
-  if (!root?.querySelector) return;
-  if (root.querySelector(`[name="flags.${NS}.${KEY}"]`)) return; // already injected
+  const root = app?.element ?? html?.[0] ?? html;
+  if (!scene || !root?.querySelector) return;
+
+  // Remove any earlier (possibly mis-placed) injection so we can re-place cleanly.
+  root.querySelector(`[name="flags.${NS}.${KEY}"]`)?.closest(".form-group")?.remove();
+
+  // Anchor: the Background Image field (<file-picker name="background.src">) in Basics.
+  const bgGroup = root.querySelector('[name="background.src"]')?.closest(".form-group");
+  if (!bgGroup?.parentNode) return; // basics part not rendered yet; a later render catches it
 
   const v = getBgOpacity(scene);
   const group = document.createElement("div");
-  group.classList.add("form-group");
+  group.className = "form-group";
   group.innerHTML = `
-    <label>Zone background opacity</label>
+    <label>Zone Background Opacity</label>
     <div class="form-fields">
       <input type="range" name="flags.${NS}.${KEY}" data-dtype="Number"
              min="0" max="1" step="0.05" value="${v}">
-      <span class="range-value">${v}</span>
+      <span class="range-value" style="min-width:3ch;text-align:right;">${v}</span>
     </div>
-    <p class="notes">Zone Combat — dim the scene background image so zone tiles show clearly.</p>`;
+    <p class="hint">Zone Combat — dim the scene background image so the zone tiles show clearly.</p>`;
 
-  // Keep the little value readout in sync as the slider moves.
   const input = group.querySelector("input");
   const readout = group.querySelector(".range-value");
   input?.addEventListener("input", () => { if (readout) readout.textContent = input.value; });
 
-  const anchor =
-    root.querySelector('[name="background.src"]')?.closest(".form-group") ??
-    root.querySelector('[name="img"]')?.closest(".form-group");
-  if (anchor?.parentNode) anchor.parentNode.insertBefore(group, anchor.nextSibling);
-  else (root.querySelector("form") ?? root).appendChild(group);
-
+  bgGroup.parentNode.insertBefore(group, bgGroup.nextSibling);
   app.setPosition?.({ height: "auto" });
 }
