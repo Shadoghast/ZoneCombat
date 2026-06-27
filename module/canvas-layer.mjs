@@ -36,6 +36,9 @@ export class ZoneCombatLayer extends CanvasLayerBase {
   /** @type {PIXI.Container|null} */
   labels = null;
 
+  /** @type {PIXI.Graphics|null} */
+  marks = null;
+
   /** Overlay visibility toggle (scene control + client setting). */
   _enabled = true;
 
@@ -46,17 +49,36 @@ export class ZoneCombatLayer extends CanvasLayerBase {
   /** @override */
   async _draw(options) {
     await super._draw?.(options);
-    this.shells = this.addChild(new PIXI.Graphics());
-    this.labels = this.addChild(new PIXI.Container()); // drawn above the shells
+
+    // Zone fills + borders live in the PRIMARY group, BENEATH the token sprites, so
+    // tokens sit on top of the zone map. A low sort keeps them under the tokens.
+    this.shells = new PIXI.Graphics();
+    this.shells.eventMode = "none";
+    this.shells.elevation = 0;
+    this.shells.sort = -9999;
+    const host = canvas.primary ?? this;
+    host.addChild(this.shells);
+    if ("sortableChildren" in host) host.sortableChildren = true;
+    host.sortDirty = true;
+
+    // Labels and edit/anchor markers stay on this (interface) layer, ABOVE tokens.
+    this.labels = this.addChild(new PIXI.Container());
+    this.marks = this.addChild(new PIXI.Graphics());
+
     this._enabled = this._readEnabled();
     this.requestRedraw();
   }
 
   /** @override */
   async _tearDown(options) {
+    if (this.shells) {
+      this.shells.parent?.removeChild(this.shells);
+      this.shells.destroy();
+      this.shells = null;
+    }
     this.removeChildren().forEach(c => c.destroy({ children: true }));
-    this.shells = null;
     this.labels = null;
+    this.marks = null;
     await super._tearDown?.(options);
   }
 
@@ -84,7 +106,9 @@ export class ZoneCombatLayer extends CanvasLayerBase {
 
   _redraw() {
     const g = this.shells;
+    if (!g) return;
     g.clear();
+    this.marks?.clear();
     this._clearLabels();
     if (!this._enabled) return;
 
@@ -130,7 +154,8 @@ export class ZoneCombatLayer extends CanvasLayerBase {
   _drawDeadAnchors() {
     const dead = getMatrix(canvas.scene).deadAnchors ?? [];
     if (!dead.length) return;
-    const g = this.shells;
+    const g = this.marks;
+    if (!g) return;
     for (const id of dead) {
       const t = canvas.tokens?.get(id);
       if (!t) continue;
@@ -148,7 +173,8 @@ export class ZoneCombatLayer extends CanvasLayerBase {
     for (const key of edited) {
       for (const id of key.split("|")) if (id !== focalId) ids.add(id);
     }
-    const g = this.shells;
+    const g = this.marks;
+    if (!g) return;
     for (const id of ids) {
       const t = canvas.tokens?.get(id);
       if (!t) continue;
