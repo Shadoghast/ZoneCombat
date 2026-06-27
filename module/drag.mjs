@@ -8,20 +8,11 @@
  *    that token's whole row from real geometry.
  * Either way the pair(s) are marked edited so the end-of-turn commit pins them (§6.3).
  */
-import { ZONE_COMBAT } from "./config.mjs";
 import * as store from "./store.mjs";
 import { getFocalTokenId, markEdited } from "./turn.mjs";
-import { representativeDistance } from "./bands.mjs";
+import { representativeDistance, bandForDistance } from "./bands.mjs";
 import { getFarNominal } from "./settings.mjs";
-import { computeRadii, measureDistance, isApplyingLayout, sceneCenter } from "./integration.mjs";
-
-/** Band key whose schematic ring contains a pixel distance, or null if beyond the diagram. */
-function ringBand(distPx, radii) {
-  for (let i = 0; i < radii.length; i++) {
-    if (distPx <= radii[i]) return ZONE_COMBAT.bands[i].key;
-  }
-  return null;
-}
+import { measureDistance, isApplyingLayout, originPoint, pixelsPerUnit } from "./integration.mjs";
 
 /** Re-derive a token's whole row from true geometry (DESIGN.md §7 free-drag). */
 function rederiveRow(scene, matrix, id) {
@@ -53,17 +44,14 @@ export async function onTokenMoved(tokenDoc, change, options, userId) {
     const moved = canvas.tokens?.get(id);
     if (!moved) return;
     // The active token sits at the scene centre, so the band is read from the dropped
-    // token's distance to that fixed centre (the static zone map).
-    const origin = sceneCenter();
-    const d = Math.hypot(origin.x - moved.center.x, origin.y - moved.center.y);
-    const band = ringBand(d, computeRadii());
-    if (band) {
-      const key = store.pairKey(focalId, id);
-      matrix.pairs[key] = representativeDistance(band, matrix.pairs[key], getFarNominal());
-      markEdited(key);
-    } else {
-      rederiveRow(scene, matrix, id);                   // dropped outside → geometric
-    }
+    // token's distance to that fixed centre, converted to the current unit.
+    const origin = originPoint();
+    const distPx = Math.hypot(origin.x - moved.center.x, origin.y - moved.center.y);
+    const distUnit = distPx / pixelsPerUnit();
+    const band = bandForDistance(distUnit);
+    const key = store.pairKey(focalId, id);
+    matrix.pairs[key] = representativeDistance(band, matrix.pairs[key], getFarNominal());
+    markEdited(key);
   }
 
   await store.setMatrix(scene, matrix);

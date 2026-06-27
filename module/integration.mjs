@@ -37,6 +37,44 @@ export function computeRadii() {
   return schematicRadii(getVisualWeights(), cellSize() * 8);
 }
 
+/** Pixels per distance unit: one cell per space, or cell/feet-per-cell for feet. */
+export function pixelsPerUnit() {
+  const cell = cellSize();
+  const feetPerCell = canvas?.dimensions?.distance ?? 5;
+  return getUnit() === "spaces" ? cell : cell / feetPerCell;
+}
+
+/** Per-band outer radii (px) at TRUE grid scale; Far is null (open-ended). */
+export function trueRadii() {
+  const ppu = pixelsPerUnit();
+  return getThresholds().map(v => (Number.isFinite(v) ? v * ppu : null));
+}
+
+/** Per-band [innerPx, outerPx] target intervals at TRUE grid scale (DESIGN.md §7). */
+export function truePixelIntervals() {
+  const ppu = pixelsPerUnit();
+  const t = getThresholds();
+  const out = {};
+  ZONE_COMBAT.bands.forEach((b, i) => {
+    const inner = i === 0 ? 0 : t[i - 1] * ppu;
+    const outer = Number.isFinite(t[i]) ? t[i] * ppu : Infinity;
+    out[b.key] = [inner, outer];
+  });
+  return out;
+}
+
+/** Scene centre, snapped to the nearest grid-cell centre on gridded scenes. */
+export function originPoint() {
+  const c = sceneCenter();
+  const g = canvas?.grid;
+  try {
+    if (g && g.type !== CONST.GRID_TYPES.GRIDLESS && g.getOffset && g.getCenterPoint) {
+      return g.getCenterPoint(g.getOffset(c));
+    }
+  } catch (_) { /* fall back to raw centre */ }
+  return c;
+}
+
 /** Long/Far boundary in feet = largest finite threshold. */
 export function farLowerBound() {
   const finite = getThresholds().filter(Number.isFinite);
@@ -144,7 +182,7 @@ export async function arrangeForFocal(scene, focalId) {
   if (!scene || !focalId || !game.user?.isGM) return;
   if (!safeGet("applyLayout")) return;
 
-  const origin = sceneCenter();
+  const origin = originPoint();
   const matrix = store.getMatrix(scene);
   const dead = new Set(matrix.deadAnchors ?? []);
 
@@ -154,7 +192,7 @@ export async function arrangeForFocal(scene, focalId) {
     return { id: td.id, x: c.x, y: c.y, pinned: dead.has(td.id) };
   });
 
-  const targets = buildPairTargets(matrix, bandForDistance, bandPixelIntervals(computeRadii()));
+  const targets = buildPairTargets(matrix, bandForDistance, truePixelIntervals());
   const { positions } = solveLayout(nodes, targets);
   await applyPositions(scene, positions);
 }
