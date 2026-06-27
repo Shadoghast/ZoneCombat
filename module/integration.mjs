@@ -9,6 +9,7 @@ import { schematicRadii } from "./geometry.mjs";
 import { getVisualWeights, getThresholds } from "./settings.mjs";
 import { bandForDistance } from "./bands.mjs";
 import { planCommit } from "./commit.mjs";
+import { summarizeChanges } from "./changelog.mjs";
 
 const MAX_LOG = 200;
 
@@ -110,8 +111,35 @@ export async function commitTurn(scene, outgoingFocalId, editedEdges = []) {
     log: appendLog(matrix.log, plan.changes, outgoingFocalId)
   });
 
+  postChangeLog(scene, plan.changes);
   if (safeGet("applyLayout")) await applyPositions(scene, plan.positions, nodes);
   return plan;
+}
+
+/** Whisper a summary of band-level changes to GMs (DESIGN.md §6.5). */
+function postChangeLog(scene, changes) {
+  if (!safeGet("logChanges")) return;
+  const nameOf = (id) => scene.tokens.get(id)?.name ?? id;
+  const lines = summarizeChanges(changes, bandForDistance, { nameOf });
+  if (!lines.length) return;
+  const content = `<strong>Zone Combat — range changes</strong><ul>${
+    lines.map(l => `<li>${l}</li>`).join("")
+  }</ul>`;
+  const gmIds = game.users.filter(u => u.isGM).map(u => u.id);
+  ChatMessage.create({ content, whisper: gmIds });
+}
+
+/** Mark or clear a token as an inert dead anchor (DESIGN.md §8.3). GM only. */
+export async function setTokenDead(scene, tokenId, isDead) {
+  if (!scene || !tokenId || !game.user?.isGM) return;
+  const matrix = store.setDeadAnchor(store.getMatrix(scene), tokenId, !!isDead);
+  await store.setMatrix(scene, matrix);
+  canvas?.zoneCombat?.requestRedraw?.();
+}
+
+/** Is this token currently a dead anchor? */
+export function isDeadAnchor(scene, tokenId) {
+  return (store.getMatrix(scene).deadAnchors ?? []).includes(tokenId);
 }
 
 async function applyPositions(scene, positions, nodes) {

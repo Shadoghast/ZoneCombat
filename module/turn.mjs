@@ -52,5 +52,8 @@ export async function onUpdateCombat(combat, changed) {
   }
   clearEdits();
 
-  setFocalToken(combat?.combatant?.tokenId ?? null);
+  // Never recenter the diagram on a dead/inert anchor (DESIGN.md §8.3).
+  const nextId = combat?.combatant?.tokenId ?? null;
+  const isDead = nextId && scene ? integration.isDeadAnchor(scene, nextId) : false;
+  setFocalToken(isDead ? null : nextId);
 }

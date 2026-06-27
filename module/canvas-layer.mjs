@@ -10,9 +10,12 @@ import { ZONE_COMBAT } from "./config.mjs";
 import { getVisualWeights } from "./settings.mjs";
 import { getFocalTokenId, getEditedEdges } from "./turn.mjs";
 import { schematicRadii } from "./geometry.mjs";
+import { getMatrix } from "./store.mjs";
 
 // Provisional / pending edit marker (DESIGN.md §6.8).
 const PENDING_COLOR = 0xffb000;
+// Dead / inert-anchor marker (DESIGN.md §8.3).
+const DEAD_COLOR = 0x888888;
 
 // CanvasLayer namespaced under foundry.canvas.layers in v13+; fall back defensively.
 const CanvasLayerBase = foundry?.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer;
@@ -109,6 +112,23 @@ export class ZoneCombatLayer extends CanvasLayerBase {
 
     // Provisional markers around tokens edited this turn (DESIGN.md §6.8).
     this._drawPending(getFocalTokenId());
+
+    // Grey ring around inert dead anchors (DESIGN.md §8.3).
+    this._drawDeadAnchors();
+  }
+
+  /** Grey-ring each token flagged as a dead/inert anchor in the matrix. */
+  _drawDeadAnchors() {
+    const dead = getMatrix(canvas.scene).deadAnchors ?? [];
+    if (!dead.length) return;
+    const g = this.shells;
+    for (const id of dead) {
+      const t = canvas.tokens?.get(id);
+      if (!t) continue;
+      const r = Math.max(t.w ?? 0, t.h ?? 0) / 2 + 4;
+      g.lineStyle(3, DEAD_COLOR, 0.9);
+      g.drawCircle(t.center.x, t.center.y, r);
+    }
   }
 
   /** Ring each token whose relationship was edited this turn but not yet committed. */

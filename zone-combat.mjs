@@ -52,6 +52,13 @@ Hooks.on("canvasReady", () => integration.seedMissingPairs(canvas?.scene));
 // Interpret a user drag as a relational edit (DESIGN.md §7 bidirectional).
 Hooks.on("updateToken", (doc, change, options, userId) => drag.onTokenMoved(doc, change, options, userId));
 
+// Defeated <-> revived toggles the token's inert dead-anchor state (DESIGN.md §8.3).
+Hooks.on("updateCombatant", (combatant, change) => {
+  if (!("defeated" in (change ?? {}))) return;
+  const scene = game.scenes?.get(combatant.sceneId) ?? canvas?.scene;
+  integration.setTokenDead(scene, combatant.tokenId, change.defeated);
+});
+
 // Turn recenter (DESIGN.md §6.3): the active combatant becomes the focal token.
 Hooks.on("updateCombat", (combat, changed) => turn.onUpdateCombat(combat, changed));
 

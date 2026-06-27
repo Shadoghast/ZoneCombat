@@ -39,6 +39,13 @@ export function registerSettings() {
     hint: "ZONECOMBAT.Settings.ApplyLayoutHint",
     scope: "world", config: true, type: Boolean, default: false
   });
+
+  // Whisper a summary of propagated band changes to GMs at end of turn (§6.5).
+  game.settings.register(NS, "logChanges", {
+    name: "ZONECOMBAT.Settings.LogChanges",
+    hint: "ZONECOMBAT.Settings.LogChangesHint",
+    scope: "world", config: true, type: Boolean, default: true
+  });
 }
 
 /** Per-band visual weights, inner → outer (DESIGN.md §4.1). */

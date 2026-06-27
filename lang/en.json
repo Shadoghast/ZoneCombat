@@ -11,6 +11,8 @@
   "ZONECOMBAT.Settings.FarNominal": "Far nominal distance (ft)",
   "ZONECOMBAT.Settings.ApplyLayout": "Auto-arrange tokens into zones",
   "ZONECOMBAT.Settings.ApplyLayoutHint": "When enabled, advancing a turn moves tokens into their solved ring positions. Off by default.",
+  "ZONECOMBAT.Settings.LogChanges": "Post range changes to chat",
+  "ZONECOMBAT.Settings.LogChangesHint": "Whisper a summary of band changes to GMs when a turn ends.",
 
   "ZONECOMBAT.Settings.Weight.close": "Visual weight — Close",
   "ZONECOMBAT.Settings.Weight.near": "Visual weight — Near",
