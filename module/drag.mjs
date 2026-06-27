@@ -13,7 +13,7 @@ import * as store from "./store.mjs";
 import { getFocalTokenId, markEdited } from "./turn.mjs";
 import { representativeDistance } from "./bands.mjs";
 import { getFarNominal } from "./settings.mjs";
-import { computeRadii, measureFeet, isApplyingLayout, sceneCenter } from "./integration.mjs";
+import { computeRadii, measureDistance, isApplyingLayout, sceneCenter } from "./integration.mjs";
 
 /** Band key whose schematic ring contains a pixel distance, or null if beyond the diagram. */
 function ringBand(distPx, radii) {
@@ -30,7 +30,7 @@ function rederiveRow(scene, matrix, id) {
   for (const other of scene.tokens.contents) {
     if (other.id === id) continue;
     const key = store.pairKey(id, other.id);
-    matrix.pairs[key] = measureFeet(me, other);
+    matrix.pairs[key] = measureDistance(me, other);
     markEdited(key);
   }
 }

@@ -15,15 +15,16 @@
  *
  * Pure and Foundry-independent so it can be unit-tested in isolation.
  */
-import { ZONE_COMBAT } from "./config.mjs";
 import { pairKey } from "./store.mjs";
 
 const EPS = 1e-6;
 
-/** Largest finite band threshold = the Long/Far boundary (default 60 ft). */
+/**
+ * Fallback Long/Far boundary used only when a caller does not pass `farLowerBound`.
+ * Live callers (integration) pass the unit-aware Long threshold explicitly.
+ */
 function defaultFarLowerBound() {
-  const finite = ZONE_COMBAT.bands.map(b => b.maxFeet).filter(Number.isFinite);
-  return finite.length ? Math.max(...finite) : 60;
+  return 60;
 }
 
 /** Distinct token ids referenced by the matrix's pair keys. */

@@ -6,7 +6,7 @@
 import { ZONE_COMBAT } from "./config.mjs";
 import * as store from "./store.mjs";
 import { schematicRadii } from "./geometry.mjs";
-import { getVisualWeights, getThresholds } from "./settings.mjs";
+import { getVisualWeights, getThresholds, getUnit } from "./settings.mjs";
 import { bandForDistance } from "./bands.mjs";
 import { planCommit } from "./commit.mjs";
 import { summarizeChanges } from "./changelog.mjs";
@@ -51,15 +51,24 @@ function tokenCenter(td) {
   return { x: td.x + w / 2, y: td.y + h / 2 };
 }
 
-/** True distance in scene units (feet) between two token documents. */
-export function measureFeet(aDoc, bDoc) {
+/**
+ * Distance between two token documents in the SELECTED unit (feet or grid spaces).
+ * Feet come from the grid measurement (which already honours the diagonal rule);
+ * spaces = feet ÷ feet-per-cell, so it stays consistent with the system's diagonals.
+ */
+export function measureDistance(aDoc, bDoc) {
   const a = tokenCenter(aDoc), b = tokenCenter(bDoc);
+  let feet;
   try {
-    if (canvas.grid?.measurePath) return canvas.grid.measurePath([a, b]).distance;
-    if (canvas.grid?.measureDistance) return canvas.grid.measureDistance(a, b);
+    if (canvas.grid?.measurePath) feet = canvas.grid.measurePath([a, b]).distance;
+    else if (canvas.grid?.measureDistance) feet = canvas.grid.measureDistance(a, b);
   } catch (_) { /* fall through to pixel estimate */ }
-  const px = Math.hypot(a.x - b.x, a.y - b.y);
-  return (px / cellSize()) * (canvas.dimensions?.distance ?? 5);
+  if (!Number.isFinite(feet)) {
+    const px = Math.hypot(a.x - b.x, a.y - b.y);
+    feet = (px / cellSize()) * (canvas.dimensions?.distance ?? 5);
+  }
+  if (getUnit() === "spaces") return feet / (canvas.dimensions?.distance ?? 5);
+  return feet;
 }
 
 function sceneTokens(scene) {
@@ -77,7 +86,7 @@ export async function seedMissingPairs(scene = canvas?.scene) {
     for (let j = i + 1; j < tokens.length; j++) {
       const key = store.pairKey(tokens[i].id, tokens[j].id);
       if (!(key in matrix.pairs)) {
-        matrix.pairs[key] = measureFeet(tokens[i], tokens[j]);
+        matrix.pairs[key] = measureDistance(tokens[i], tokens[j]);
         changed = true;
       }
     }

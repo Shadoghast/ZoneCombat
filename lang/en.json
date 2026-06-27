@@ -8,7 +8,11 @@
   "ZONECOMBAT.Control.Toggle": "Toggle Zone Combat overlay",
 
   "ZONECOMBAT.Settings.OverlayEnabled": "Show zone overlay",
-  "ZONECOMBAT.Settings.FarNominal": "Far nominal distance (ft)",
+  "ZONECOMBAT.Settings.Unit": "Distance unit",
+  "ZONECOMBAT.Settings.UnitHint": "Measure band distances in feet (scene units) or grid spaces. Thresholds use this unit.",
+  "ZONECOMBAT.Unit.feet": "Feet",
+  "ZONECOMBAT.Unit.spaces": "Spaces (grid)",
+  "ZONECOMBAT.Settings.FarNominal": "Far nominal distance (0 = auto)",
   "ZONECOMBAT.Settings.ApplyLayout": "Arrange tokens into the zone map",
   "ZONECOMBAT.Settings.ApplyLayoutHint": "When a turn begins, move the active token to the scene-center zone map and arrange the others into their rings. On by default.",
   "ZONECOMBAT.Settings.LogChanges": "Post range changes to chat",
@@ -20,8 +24,8 @@
   "ZONECOMBAT.Settings.Weight.long": "Visual weight — Long",
   "ZONECOMBAT.Settings.Weight.far": "Visual weight — Far",
 
-  "ZONECOMBAT.Settings.Threshold.close": "Distance threshold — Close (ft)",
-  "ZONECOMBAT.Settings.Threshold.near": "Distance threshold — Near (ft)",
-  "ZONECOMBAT.Settings.Threshold.medium": "Distance threshold — Medium (ft)",
-  "ZONECOMBAT.Settings.Threshold.long": "Distance threshold — Long (ft)"
+  "ZONECOMBAT.Settings.Threshold.close": "Threshold — Close (0 = auto)",
+  "ZONECOMBAT.Settings.Threshold.near": "Threshold — Near (0 = auto)",
+  "ZONECOMBAT.Settings.Threshold.medium": "Threshold — Medium (0 = auto)",
+  "ZONECOMBAT.Settings.Threshold.long": "Threshold — Long (0 = auto)"
 }

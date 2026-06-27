@@ -22,7 +22,7 @@ export function getMatrix(scene = canvas?.scene) {
 export function emptyMatrix() {
   return {
     version: 1,
-    nominalFar: ZONE_COMBAT.defaults.farNominalFeet,
+    nominalFar: ZONE_COMBAT.defaults.farNominal,
     pairs: {},        // "idA|idB" -> scalar feet
     deadAnchors: [],  // inert-anchor token ids (DESIGN.md §8.3)
     log: []           // per-turn change entries (DESIGN.md §6.5)
