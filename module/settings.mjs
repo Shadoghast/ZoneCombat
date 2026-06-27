@@ -13,6 +13,14 @@ export function registerSettings() {
     scope: "client", config: true, type: Boolean, default: true
   });
 
+  // Zone fill opacity — kept low so the map shows through the rings.
+  game.settings.register(NS, "fillAlpha", {
+    name: "ZONECOMBAT.Settings.FillAlpha",
+    hint: "ZONECOMBAT.Settings.FillAlphaHint",
+    scope: "world", config: true, type: Number,
+    range: { min: 0, max: 0.5, step: 0.02 }, default: 0.1
+  });
+
   // Distance unit: feet or grid spaces (DESIGN.md §4.2).
   game.settings.register(NS, "unit", {
     name: "ZONECOMBAT.Settings.Unit",
@@ -57,6 +65,12 @@ export function registerSettings() {
     hint: "ZONECOMBAT.Settings.LogChangesHint",
     scope: "world", config: true, type: Boolean, default: true
   });
+}
+
+/** Zone fill opacity (0 = invisible fills, map fully visible). */
+export function getFillAlpha() {
+  const v = safeGet("fillAlpha");
+  return Number.isFinite(v) ? v : 0.1;
 }
 
 /** Selected distance unit key ("feet" | "spaces"). */

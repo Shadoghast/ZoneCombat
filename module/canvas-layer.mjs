@@ -7,15 +7,12 @@
  * distance. This layer only DRAWS — token placement is owned by the layout solver (§7).
  */
 import { ZONE_COMBAT } from "./config.mjs";
-import { getVisualWeights } from "./settings.mjs";
+import { getVisualWeights, getFillAlpha } from "./settings.mjs";
 import { getFocalTokenId, getEditedEdges } from "./turn.mjs";
 import { schematicRadii } from "./geometry.mjs";
 import { getMatrix } from "./store.mjs";
 import { sceneCenter } from "./integration.mjs";
 
-// Per-zone fill opacity. Each zone is drawn as a single ring (annulus), so fills do
-// NOT stack — keeps the focal token and nearby tokens clearly visible.
-const FILL_ALPHA = 0.14;
 // Provisional / pending edit marker (DESIGN.md §6.8).
 const PENDING_COLOR = 0xffb000;
 // Dead / inert-anchor marker (DESIGN.md §8.3).
@@ -120,10 +117,11 @@ export class ZoneCombatLayer extends CanvasLayerBase {
 
     // Pass 1 — each zone as a single ring (annulus), so fills never stack and the
     // tokens sitting in/near the centre stay clearly visible (no opacity build-up).
+    const fillAlpha = getFillAlpha();
     for (let i = 0; i < bands.length; i++) {
       const inner = i === 0 ? 0 : radii[i - 1];
       g.lineStyle(0);
-      g.beginFill(bands[i].color, FILL_ALPHA);
+      g.beginFill(bands[i].color, fillAlpha);
       this._drawShape(g, center, radii[i], gridType);
       if (inner > 0) {
         g.beginHole();
