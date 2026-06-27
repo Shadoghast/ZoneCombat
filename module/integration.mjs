@@ -12,6 +12,11 @@ import { planCommit } from "./commit.mjs";
 
 const MAX_LOG = 200;
 
+// True while we are moving tokens to solved positions, so the drag handler can ignore
+// the resulting updateToken events instead of treating them as user edits.
+let _applyingLayout = false;
+export function isApplyingLayout() { return _applyingLayout; }
+
 export function cellSize() {
   return canvas?.dimensions?.size ?? 100;
 }
@@ -120,7 +125,10 @@ async function applyPositions(scene, positions, nodes) {
     const h = t?.h ?? cellSize();
     updates.push({ _id: n.id, x: Math.round(p.x - w / 2), y: Math.round(p.y - h / 2) });
   }
-  if (updates.length) await scene.updateEmbeddedDocuments("Token", updates);
+  if (!updates.length) return;
+  _applyingLayout = true;
+  try { await scene.updateEmbeddedDocuments("Token", updates); }
+  finally { _applyingLayout = false; }
 }
 
 function safeGet(key) {

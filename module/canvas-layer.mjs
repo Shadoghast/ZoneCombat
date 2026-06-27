@@ -8,8 +8,11 @@
  */
 import { ZONE_COMBAT } from "./config.mjs";
 import { getVisualWeights } from "./settings.mjs";
-import { getFocalTokenId } from "./turn.mjs";
+import { getFocalTokenId, getEditedEdges } from "./turn.mjs";
 import { schematicRadii } from "./geometry.mjs";
+
+// Provisional / pending edit marker (DESIGN.md §6.8).
+const PENDING_COLOR = 0xffb000;
 
 // CanvasLayer namespaced under foundry.canvas.layers in v13+; fall back defensively.
 const CanvasLayerBase = foundry?.canvas?.layers?.CanvasLayer ?? globalThis.CanvasLayer;
@@ -103,6 +106,27 @@ export class ZoneCombatLayer extends CanvasLayerBase {
 
     // Labels — one per zone, placed within each band's annulus.
     this._drawLabels(center, bands, radii);
+
+    // Provisional markers around tokens edited this turn (DESIGN.md §6.8).
+    this._drawPending(getFocalTokenId());
+  }
+
+  /** Ring each token whose relationship was edited this turn but not yet committed. */
+  _drawPending(focalId) {
+    const edited = getEditedEdges();
+    if (!edited.length) return;
+    const ids = new Set();
+    for (const key of edited) {
+      for (const id of key.split("|")) if (id !== focalId) ids.add(id);
+    }
+    const g = this.shells;
+    for (const id of ids) {
+      const t = canvas.tokens?.get(id);
+      if (!t) continue;
+      const r = Math.max(t.w ?? 0, t.h ?? 0) / 2 + 6;
+      g.lineStyle(2, PENDING_COLOR, 0.95);
+      g.drawCircle(t.center.x, t.center.y, r);
+    }
   }
 
   /** Normalised cumulative radii (px) from per-band visual weights (DESIGN.md §4.1). */
