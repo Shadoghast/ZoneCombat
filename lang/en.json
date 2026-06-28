@@ -25,12 +25,6 @@
   "ZONECOMBAT.Settings.LogChanges": "Post range changes to chat",
   "ZONECOMBAT.Settings.LogChangesHint": "Whisper a summary of band changes to GMs when a turn ends.",
 
-  "ZONECOMBAT.Settings.Weight.close": "Visual weight — Close",
-  "ZONECOMBAT.Settings.Weight.short": "Visual weight — Short",
-  "ZONECOMBAT.Settings.Weight.medium": "Visual weight — Medium",
-  "ZONECOMBAT.Settings.Weight.long": "Visual weight — Long",
-  "ZONECOMBAT.Settings.Weight.extreme": "Visual weight — Extreme",
-
   "ZONECOMBAT.Settings.Threshold.close": "Threshold — Close (0 = auto)",
   "ZONECOMBAT.Settings.Threshold.short": "Threshold — Short (0 = auto)",
   "ZONECOMBAT.Settings.Threshold.medium": "Threshold — Medium (0 = auto)",

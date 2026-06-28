@@ -1,23 +1,9 @@
 /**
- * Zone Combat — best-fit layout solver (DESIGN.md §7).
- *
- * Places tokens on the canvas so each pair's on-canvas distance falls inside that
- * pair's target pixel interval. The targets are the SCHEMATIC shell radii (weight-based
- * rings, §4.1) mapped to a band → [innerRadius, outerRadius] pixel range — so a token in
- * the "Near" band lands inside the drawn Near ring, not at its true distance in feet.
- *
- * Key properties (DESIGN.md §7):
- *  - Zero force while a pair's distance is inside its band interval (slack → no jitter).
- *  - Pinned nodes (focal token + dead anchors, §8.3) are held fixed.
- *  - Approximate by design: the matrix need not be 2D-embeddable, so the solver
- *    minimises out-of-band error rather than guaranteeing a perfect layout.
- *
- * The core `solveLayout` is pure (positions + intervals in, positions out) and
- * Foundry-independent, so it can be unit-tested in isolation.
+ * Zone Combat — best-fit layout solver (pure, Foundry-independent).
+ * Places tokens so each pair's on-canvas distance falls inside its target pixel interval:
+ * zero force while inside the band (no jitter), pinned nodes held fixed, approximate when
+ * the matrix isn't 2D-embeddable.
  */
-import { ZONE_COMBAT } from "./config.mjs";
-import { pairKey } from "./store.mjs";
-
 const EPS = 1e-6;
 
 /**
@@ -88,35 +74,15 @@ function hashId(id) {
 }
 
 /**
- * Map the cumulative schematic shell radii (px) to per-band [inner, outer] intervals.
- * @param {number[]} radii  cumulative outer radius per band, inner → outer
- * @returns {Object<string,[number,number]>} bandKey → [innerPx, outerPx]
- */
-export function bandPixelIntervals(radii) {
-  const out = {};
-  ZONE_COMBAT.bands.forEach((b, i) => {
-    const inner = i === 0 ? 0 : radii[i - 1];
-    const outer = i === radii.length - 1 ? Infinity : radii[i]; // Far ring is open-ended
-    out[b.key] = [inner, outer];
-  });
-  return out;
-}
-
-/**
- * Build per-pair pixel target intervals from the matrix, by bucketing each pair's
- * distance to a band and mapping that band to its schematic pixel interval.
- * @param {object} matrix
+ * Per-pair pixel target intervals from the matrix: bucket each pair's distance to a band,
+ * then map that band to its pixel interval.
  * @param {(feet:number)=>string} bandForDistance  distance→band-key bucketer
  * @param {Object<string,[number,number]>} bandPx   band-key → [innerPx, outerPx]
- * @returns {Object<string,[number,number]>}
  */
 export function buildPairTargets(matrix, bandForDistance, bandPx) {
   const targets = {};
   for (const [key, feet] of Object.entries(matrix.pairs ?? {})) {
-    const band = bandForDistance(feet);
-    targets[key] = bandPx[band] ?? [0, Infinity];
+    targets[key] = bandPx[bandForDistance(feet)] ?? [0, Infinity];
   }
   return targets;
 }
-
-export { pairKey };

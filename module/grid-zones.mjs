@@ -14,9 +14,7 @@ import { getThresholds, getUnit } from "./settings.mjs";
 import { originPoint } from "./integration.mjs";
 
 const MAX_RADIUS_CELLS = 40; // safety cap on enumeration
-let _cache = null;
-
-export function invalidateZones() { _cache = null; }
+let _cache = null; // self-invalidates via the cache key
 
 function colorForBand(key) {
   return ZONE_COMBAT.bands.find(b => b.key === key)?.color ?? 0xffffff;

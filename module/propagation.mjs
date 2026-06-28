@@ -1,28 +1,14 @@
 /**
- * Zone Combat — triangle-inequality constraint repair (DESIGN.md §6.4).
- *
- * The relational matrix stores one scalar distance per unordered pair. After an edit,
- * some off-center pairs may violate the triangle inequality. `repair` restores
- * consistency by clamping the *free* (non-pinned) edges into the feasible interval
- * implied by the other two edges of each triple, iterating to a fixpoint.
- *
- * Pinning (DESIGN.md §6.3/§6.4): the active token's whole row is pinned, plus any
- * edges explicitly edited this turn. Pinned edges are never modified.
- *
- * Far handling (DESIGN.md §6.4): an edge in the Far band has a lower bound (the Far
- * threshold) but an *unbounded upper* (∞), so a Far pairing imposes a minimum
- * separation on others but never an upper cap. Its stored scalar is for layout only.
- *
- * Pure and Foundry-independent so it can be unit-tested in isolation.
+ * Zone Combat — triangle-inequality constraint repair (pure, unit-tested). DESIGN.md §6.4.
+ * Clamps free (non-pinned) edges into the feasible interval set by the other two edges of
+ * each triple, iterating to a fixpoint. The active token's row + this-turn's edits are
+ * pinned. An Extreme edge bounds others below (min separation) but never above (∞ upper).
  */
 import { pairKey } from "./store.mjs";
 
 const EPS = 1e-6;
 
-/**
- * Fallback Long/Far boundary used only when a caller does not pass `farLowerBound`.
- * Live callers (integration) pass the unit-aware Long threshold explicitly.
- */
+/** Fallback Long/Extreme boundary; live callers pass the unit-aware threshold. */
 function defaultFarLowerBound() {
   return 60;
 }

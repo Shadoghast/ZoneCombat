@@ -3,7 +3,7 @@
  * Run: node test/layout.test.mjs
  */
 import assert from "node:assert/strict";
-import { solveLayout, bandPixelIntervals, buildPairTargets } from "../module/layout.mjs";
+import { solveLayout, buildPairTargets } from "../module/layout.mjs";
 
 const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
@@ -87,15 +87,6 @@ test("coincident nodes get pushed apart (no NaN)", () => {
 });
 
 // --- band → pixel interval mapping --------------------------------------------
-test("bandPixelIntervals maps cumulative radii, Extreme open-ended", () => {
-  const radii = [34, 62, 92, 104, 114];
-  const bp = bandPixelIntervals(radii);
-  assert.deepEqual(bp.close, [0, 34]);
-  assert.deepEqual(bp.short, [34, 62]);
-  assert.deepEqual(bp.extreme[0], 104);
-  assert.equal(bp.extreme[1], Infinity);
-});
-
 // --- buildPairTargets buckets distances into band intervals --------------------
 test("buildPairTargets maps each pair via its band", () => {
   const matrix = { pairs: { "A|B": 3, "A|C": 200 } };

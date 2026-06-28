@@ -47,19 +47,13 @@ export function registerSettings() {
     default: ZONE_COMBAT.defaults.unit
   });
 
+  // Per-band threshold override: 0 = use the selected unit's default, else override (current unit).
   for (const b of ZONE_COMBAT.bands) {
-    game.settings.register(NS, `weight.${b.key}`, {
-      name: `ZONECOMBAT.Settings.Weight.${b.key}`,
-      scope: "world", config: true, type: Number, default: b.weight
+    if (b.key === "extreme") continue;
+    game.settings.register(NS, `threshold.${b.key}`, {
+      name: `ZONECOMBAT.Settings.Threshold.${b.key}`,
+      scope: "world", config: true, type: Number, default: 0
     });
-    if (b.key !== "extreme") {
-      // 0 = use the selected unit's default threshold; a positive value overrides it
-      // (interpreted in the currently selected unit).
-      game.settings.register(NS, `threshold.${b.key}`, {
-        name: `ZONECOMBAT.Settings.Threshold.${b.key}`,
-        scope: "world", config: true, type: Number, default: 0
-      });
-    }
   }
 
   // 0 = use the selected unit's Far nominal.
@@ -142,22 +136,9 @@ function unitConfig() {
   return ZONE_COMBAT.units[getUnit()] ?? ZONE_COMBAT.units.feet;
 }
 
-/** Display label for the current unit ("ft" | "spaces"). */
-export function getUnitLabel() {
-  return unitConfig().label;
-}
-
-/** Per-band visual weights, inner → outer (DESIGN.md §4.1). */
-export function getVisualWeights() {
-  return ZONE_COMBAT.bands.map(b => {
-    const v = safeGet(`weight.${b.key}`);
-    return Number.isFinite(v) ? v : b.weight;
-  });
-}
-
 /**
- * Per-band upper thresholds in the CURRENT unit, inner → outer; Far is Infinity.
- * A positive per-band override wins; otherwise the selected unit's default is used.
+ * Per-band upper thresholds in the current unit, inner → outer (Extreme = Infinity).
+ * A positive per-band override wins; otherwise the unit's default is used.
  */
 export function getThresholds() {
   const u = unitConfig().thresholds;

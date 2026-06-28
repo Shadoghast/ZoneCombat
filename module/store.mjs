@@ -33,16 +33,6 @@ export async function setMatrix(scene, data) {
   return scene?.setFlag?.(NS, KEY, data);
 }
 
-export function getDistance(matrix, a, b) {
-  return matrix?.pairs?.[pairKey(a, b)];
-}
-
-/** Local (non-persisting) set; caller persists via setMatrix once a batch completes. */
-export function setDistanceLocal(matrix, a, b, feet) {
-  matrix.pairs[pairKey(a, b)] = feet;
-  return matrix;
-}
-
 /** Remove every trace of a token from the matrix (DESIGN.md §8.2). */
 export function pruneToken(matrix, id) {
   for (const k of Object.keys(matrix.pairs)) {

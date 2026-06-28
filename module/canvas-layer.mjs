@@ -1,13 +1,8 @@
 /**
- * Zone Combat — canvas overlay layer (DESIGN.md §3).
- *
- * Draws the STATIC zone map anchored at the (cell-snapped) scene centre. On gridded
- * scenes the zones are TRUE-SCALE tiled grid cells (a honeycomb of hexes / blocks of
- * squares) following the actual cell shapes; on gridless scenes it falls back to smooth
- * concentric circles at true scale.
- *
- * Zone fills + cell borders live in the PRIMARY group, BENEATH the token sprites; labels
- * and edit/anchor markers stay on this (interface) layer, ABOVE tokens.
+ * Zone Combat — canvas overlay layer. Bands mode: true-scale tiled grid cells around the
+ * cell-snapped scene centre (gridless → circles). Zones mode: regions coloured by hop band.
+ * Fills/borders go in the PRIMARY group beneath token sprites; labels + markers stay on
+ * this interface layer above them.
  */
 import { ZONE_COMBAT } from "./config.mjs";
 import { getFillAlpha, getThresholds, getBoundaryWidth, getBoundaryColor, getMode, getArmReach } from "./settings.mjs";

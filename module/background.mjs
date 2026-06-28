@@ -21,10 +21,9 @@ export function applyBackgroundOpacity(scene = canvas?.scene) {
 }
 
 /**
- * Inject the slider into the Scene config form (Foundry v13/v14 ApplicationV2).
- * The render hook can fire before the tab parts exist, so we de-dupe by *removing* any
- * prior injection and re-inserting against the fully-rendered DOM (`app.element`) — that
- * way the final placement is always correct, next to the Background Image field.
+ * Inject the mode select + opacity slider into the Scene config (v13/v14 ApplicationV2).
+ * The render hook can fire before the tab parts exist, so we de-dupe by removing any prior
+ * injection and re-inserting against the fully-rendered `app.element`, next to Background Image.
  */
 export function injectSceneConfig(app, html) {
   const scene = app?.document ?? app?.object;

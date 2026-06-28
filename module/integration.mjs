@@ -1,16 +1,12 @@
-/**
- * Zone Combat — Foundry integration glue (DESIGN.md §6.3–6.5, §8.1).
- * Bridges the pure engines to the live scene: matrix seeding, the end-of-turn commit,
- * node gathering, distance measurement, and (optionally) moving tokens to solved spots.
- */
+// Zone Combat — Foundry glue: bridges the pure engines to the live scene
+// (seeding, end-of-turn commit, distance measurement, token arrangement).
 import { ZONE_COMBAT } from "./config.mjs";
 import * as store from "./store.mjs";
-import { schematicRadii } from "./geometry.mjs";
-import { getVisualWeights, getThresholds, getUnit, getMode } from "./settings.mjs";
+import { getThresholds, getUnit, getMode } from "./settings.mjs";
 import { bandForDistance } from "./bands.mjs";
-import { planCommit } from "./commit.mjs";
+import { repair } from "./propagation.mjs";
 import { summarizeChanges } from "./changelog.mjs";
-import { solveLayout, buildPairTargets, bandPixelIntervals } from "./layout.mjs";
+import { solveLayout, buildPairTargets } from "./layout.mjs";
 
 const MAX_LOG = 200;
 
@@ -33,10 +29,6 @@ export function sceneCenter() {
   return { x: (d.width ?? 0) / 2, y: (d.height ?? 0) / 2 };
 }
 
-export function computeRadii() {
-  return schematicRadii(getVisualWeights(), cellSize() * 8);
-}
-
 /** Pixels per distance unit: one cell per space, or cell/feet-per-cell for feet. */
 export function pixelsPerUnit() {
   const cell = cellSize();
@@ -44,13 +36,7 @@ export function pixelsPerUnit() {
   return getUnit() === "spaces" ? cell : cell / feetPerCell;
 }
 
-/** Per-band outer radii (px) at TRUE grid scale; Far is null (open-ended). */
-export function trueRadii() {
-  const ppu = pixelsPerUnit();
-  return getThresholds().map(v => (Number.isFinite(v) ? v * ppu : null));
-}
-
-/** Per-band [innerPx, outerPx] target intervals at TRUE grid scale (DESIGN.md §7). */
+/** Per-band [innerPx, outerPx] target intervals at true grid scale. */
 export function truePixelIntervals() {
   const ppu = pixelsPerUnit();
   const t = getThresholds();
@@ -89,11 +75,7 @@ function tokenCenter(td) {
   return { x: td.x + w / 2, y: td.y + h / 2 };
 }
 
-/**
- * Distance between two token documents in the SELECTED unit (feet or grid spaces).
- * Feet come from the grid measurement (which already honours the diagonal rule);
- * spaces = feet ÷ feet-per-cell, so it stays consistent with the system's diagonals.
- */
+/** Distance between two tokens in the selected unit (feet from the grid, or feet/cell for spaces). */
 export function measureDistance(aDoc, bDoc) {
   const a = tokenCenter(aDoc), b = tokenCenter(bDoc);
   let feet;
@@ -133,52 +115,26 @@ export async function seedMissingPairs(scene = canvas?.scene) {
   if (changed) await store.setMatrix(scene, matrix);
 }
 
-function gatherNodes(scene, focalId) {
-  const dead = new Set(store.getMatrix(scene).deadAnchors ?? []);
-  return sceneTokens(scene).map(td => {
-    const c = tokenCenter(td);
-    return { id: td.id, x: c.x, y: c.y, pinned: dead.has(td.id) || td.id === focalId };
-  });
-}
-
 function appendLog(log = [], changes, focalId) {
   if (!changes?.length) return log;
   const entry = { t: Date.now(), focal: focalId, changes };
   return [...log, entry].slice(-MAX_LOG);
 }
 
-/**
- * Commit the outgoing turn: repair the matrix (pinning the outgoing focal row),
- * persist it with a change-log entry, and — if enabled — move tokens to the solved
- * positions. (DESIGN.md §6.3–6.5, §7)
- */
+/** Commit the outgoing turn: repair the matrix (pinning the outgoing focal row), persist, log. */
 export async function commitTurn(scene, outgoingFocalId, editedEdges = []) {
   if (!scene || !game.user?.isGM) return null;
   const matrix = store.getMatrix(scene);
-  const nodes = gatherNodes(scene, outgoingFocalId);
-  const plan = planCommit(matrix, {
-    pinnedRowTokenId: outgoingFocalId,
-    editedEdges,
-    nodes,
-    radii: computeRadii(),
-    bandForDistance,
-    farLowerBound: farLowerBound()
+  const tokenIds = sceneTokens(scene).map(t => t.id);
+  const { matrix: repaired, changes } = repair(matrix, {
+    pinnedRowTokenId: outgoingFocalId, editedEdges, tokenIds, farLowerBound: farLowerBound()
   });
-
-  await store.setMatrix(scene, {
-    ...plan.matrix,
-    log: appendLog(matrix.log, plan.changes, outgoingFocalId)
-  });
-
-  postChangeLog(scene, plan.changes);
-  return plan;
+  await store.setMatrix(scene, { ...repaired, log: appendLog(matrix.log, changes, outgoingFocalId) });
+  postChangeLog(scene, changes);
+  return { matrix: repaired, changes };
 }
 
-/**
- * Arrange tokens into the STATIC zone map (§3 static map): pin the active token at the
- * scene centre and place everyone else into their rings around it, then move the tokens.
- * The map itself does not move — the tokens move into it.
- */
+/** Static map: pin the active token at scene centre, place the rest into their rings, move tokens. */
 export async function arrangeForFocal(scene, focalId) {
   if (!scene || !focalId || !game.user?.isGM) return;
   if (getMode(scene) === "zones") return; // tokens are not rearranged in drawn-zone mode
