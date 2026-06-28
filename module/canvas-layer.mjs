@@ -15,7 +15,10 @@ import { getFocalTokenId, getEditedEdges } from "./turn.mjs";
 import { getMatrix } from "./store.mjs";
 import { originPoint, pixelsPerUnit, cellSize } from "./integration.mjs";
 import { computeZones } from "./grid-zones.mjs";
-import { zoneHighlights, ringsCentroid } from "./regions.mjs";
+import { zoneHighlights, ringsCentroid, getZones, pointZoneId, toggleZoneLink, sceneGraph } from "./regions.mjs";
+
+const LINK_COLOR = 0x33ccff;    // adjacency-graph edges in the link editor
+const SELECT_COLOR = 0xffff00;  // selected-zone outline in the link editor
 
 const PENDING_COLOR = 0xffb000;  // provisional edit marker (DESIGN.md §6.8)
 const DEAD_COLOR = 0x888888;     // inert dead-anchor marker (DESIGN.md §8.3)
@@ -31,6 +34,11 @@ export class ZoneCombatLayer extends CanvasLayerBase {
   /** @type {PIXI.Container|null} */ labels = null;
   /** @type {PIXI.Graphics|null} */ marks = null;
   _enabled = true;
+
+  // Drawn-zone link editor state.
+  _linkEdit = false;
+  _selZone = null;
+  /** @type {PIXI.Graphics|null} */ linkCapture = null;
 
   static get layerOptions() {
     return foundry.utils.mergeObject(super.layerOptions ?? {}, { name: "zoneCombat" });
@@ -65,6 +73,7 @@ export class ZoneCombatLayer extends CanvasLayerBase {
       this.shells.destroy();
       this.shells = null;
     }
+    this.setLinkEdit(false);
     this.removeChildren().forEach(c => c.destroy({ children: true }));
     this.labels = null;
     this.marks = null;
@@ -190,6 +199,77 @@ export class ZoneCombatLayer extends CanvasLayerBase {
     // WHToW "Close": ring tokens within arm's reach of the active token (proximity
     // override — works even across an adjacent zone edge).
     this._drawCloseEngaged(active);
+
+    // Link editor overlay (adjacency graph + selected zone), when active.
+    this._drawLinkEditor();
+  }
+
+  /** Toggle the zone-link editor: capture clicks to pick two zones and toggle their link. */
+  setLinkEdit(on) {
+    this._linkEdit = !!on;
+    this._selZone = null;
+    if (on && !this.linkCapture) {
+      const cap = new PIXI.Graphics();
+      cap.eventMode = "static";
+      cap.cursor = "crosshair";
+      const d = canvas.dimensions;
+      cap.hitArea = new PIXI.Rectangle(0, 0, d?.width ?? 0, d?.height ?? 0);
+      cap.on("pointerdown", (e) => this._onLinkClick(e));
+      this.linkCapture = this.addChild(cap);
+    } else if (!on && this.linkCapture) {
+      this.linkCapture.removeAllListeners?.();
+      this.linkCapture.parent?.removeChild(this.linkCapture);
+      this.linkCapture.destroy();
+      this.linkCapture = null;
+    }
+    this.requestRedraw();
+  }
+
+  _onLinkClick(event) {
+    const orig = event?.data?.originalEvent ?? event?.nativeEvent;
+    if (orig && orig.button !== 0) return; // left-click only
+    const pt = canvas.mousePosition;
+    if (!pt) return;
+    const id = pointZoneId(pt, getZones(canvas.scene));
+    if (!id) { this._selZone = null; this.requestRedraw(); return; }
+    if (!this._selZone) this._selZone = id;
+    else if (this._selZone === id) this._selZone = null;
+    else {
+      const a = this._selZone;
+      this._selZone = null;
+      toggleZoneLink(canvas.scene, a, id); // async setFlag → updateScene → redraw
+    }
+    this.requestRedraw();
+  }
+
+  /** Draw the adjacency graph (centroid edges) and the selected zone while editing. */
+  _drawLinkEditor() {
+    if (!this._linkEdit || !this.marks) return;
+    const g = this.marks;
+    const { zones, graph } = sceneGraph(canvas.scene);
+    const centroids = new Map(zones.map(z => [z.id, ringsCentroid(z.rings)]));
+
+    g.lineStyle(3, LINK_COLOR, 0.9);
+    const drawn = new Set();
+    for (const [id, neighbours] of graph) {
+      const c1 = centroids.get(id);
+      if (!c1) continue;
+      for (const n of neighbours) {
+        const k = id < n ? `${id}|${n}` : `${n}|${id}`;
+        if (drawn.has(k)) continue;
+        drawn.add(k);
+        const c2 = centroids.get(n);
+        if (!c2) continue;
+        g.moveTo(c1.x, c1.y); g.lineTo(c2.x, c2.y);
+      }
+    }
+    for (const c of centroids.values()) {
+      g.lineStyle(0); g.beginFill(LINK_COLOR, 1); g.drawCircle(c.x, c.y, 7); g.endFill();
+    }
+    if (this._selZone) {
+      const z = zones.find(z => z.id === this._selZone);
+      if (z) { g.lineStyle(5, SELECT_COLOR, 1); for (const ring of z.rings) g.drawPolygon(ring); }
+    }
   }
 
   /** Mark tokens within arm's reach (Close / engaged) of the active token. */

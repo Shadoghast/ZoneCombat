@@ -6,6 +6,7 @@
   "ZONECOMBAT.Band.Extreme": "Extreme",
 
   "ZONECOMBAT.Control.Toggle": "Toggle Zone Combat overlay",
+  "ZONECOMBAT.Control.EditLinks": "Edit zone links (click two zones)",
 
   "ZONECOMBAT.Settings.OverlayEnabled": "Show zone overlay",
   "ZONECOMBAT.Settings.FillAlpha": "Zone fill opacity",

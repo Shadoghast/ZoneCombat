@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import {
   pointInRings, minRingDistance, polygonsAdjacent,
-  buildAutoEdges, applyOverrides, buildGraph, hopDistance, edgeKey
+  buildAutoEdges, applyOverrides, buildGraph, hopDistance, edgeKey, toggleLink
 } from "../module/zone-graph.mjs";
 
 const tests = [];
@@ -77,6 +77,30 @@ test("hopDistance takes the shorter path when a loop exists", () => {
     [["A", "B"], ["B", "C"], ["C", "D"], ["A", "D"]]);
   assert.equal(hopDistance(g, "A", "D"), 1);
   assert.equal(hopDistance(g, "A", "C"), 2);
+});
+
+test("toggleLink removes an auto edge, then restores it", () => {
+  const auto = [["A", "B"]];
+  let links = toggleLink(auto, { added: [], removed: [] }, "A", "B");
+  assert.equal(links.removed.length, 1);            // auto link turned off
+  assert.equal(links.added.length, 0);
+  // and the final graph no longer has it
+  let edges = applyOverrides(auto, links.added, links.removed);
+  assert.equal(edges.length, 0);
+  // toggle again → restored
+  links = toggleLink(auto, links, "A", "B");
+  edges = applyOverrides(auto, links.added, links.removed);
+  assert.equal(edges.length, 1);
+});
+
+test("toggleLink adds a non-auto edge, then removes it", () => {
+  const auto = [["A", "B"]];
+  let links = toggleLink(auto, { added: [], removed: [] }, "C", "D");
+  assert.equal(links.added.length, 1);
+  let edges = applyOverrides(auto, links.added, links.removed);
+  assert.equal(new Set(edges.map(([a, b]) => edgeKey(a, b))).has(edgeKey("C", "D")), true);
+  links = toggleLink(auto, links, "C", "D");
+  assert.equal(links.added.length, 0);
 });
 
 let failed = 0, passed = 0;

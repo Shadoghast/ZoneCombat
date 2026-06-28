@@ -4,7 +4,7 @@
  * See docs/DESIGN.md for the full model.
  */
 import { ZONE_COMBAT } from "./module/config.mjs";
-import { registerSettings } from "./module/settings.mjs";
+import { registerSettings, getMode } from "./module/settings.mjs";
 import { ZoneCombatLayer } from "./module/canvas-layer.mjs";
 import * as turn from "./module/turn.mjs";
 import * as store from "./module/store.mjs";
@@ -89,13 +89,25 @@ Hooks.on("getSceneControlButtons", (controls) => {
     active: true,
     onClick: (active) => canvas?.zoneCombat?.setEnabled?.(active)
   };
+  // Drawn-zone mode only: toggle the click-to-link adjacency editor.
+  const linkTool = {
+    name: "zone-combat-links",
+    title: "ZONECOMBAT.Control.EditLinks",
+    icon: "fas fa-diagram-project",
+    toggle: true,
+    active: !!canvas?.zoneCombat?._linkEdit,
+    visible: getMode(canvas?.scene) === "zones",
+    onClick: (active) => canvas?.zoneCombat?.setLinkEdit?.(active)
+  };
   try {
     const tokenControls = Array.isArray(controls)
       ? controls.find(c => c.name === "token")
       : controls?.token ?? Object.values(controls ?? {}).find(c => c?.name === "token");
     if (!tokenControls) return;
-    if (Array.isArray(tokenControls.tools)) tokenControls.tools.push(tool);
-    else if (tokenControls.tools) tokenControls.tools[tool.name] = tool;
+    for (const t of [tool, linkTool]) {
+      if (Array.isArray(tokenControls.tools)) tokenControls.tools.push(t);
+      else if (tokenControls.tools) tokenControls.tools[t.name] = t;
+    }
   } catch (err) {
     console.warn("Zone Combat | could not add scene control", err);
   }

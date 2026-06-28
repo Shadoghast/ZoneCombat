@@ -6,7 +6,7 @@
  */
 import { ZONE_COMBAT } from "./config.mjs";
 import {
-  buildAutoEdges, applyOverrides, buildGraph, hopDistance, pointInRings
+  buildAutoEdges, applyOverrides, buildGraph, hopDistance, pointInRings, toggleLink
 } from "./zone-graph.mjs";
 
 const NS = ZONE_COMBAT.id;
@@ -89,6 +89,24 @@ export function tokenZoneId(token, zones) {
   const c = tokenCenter(token);
   for (const z of zones) if (pointInRings(c.x, c.y, z.rings)) return z.id;
   return null;
+}
+
+/** Id of the zone containing a raw world point, or null. */
+export function pointZoneId(point, zones) {
+  for (const z of zones) if (pointInRings(point.x, point.y, z.rings)) return z.id;
+  return null;
+}
+
+/** Toggle the GM adjacency override between two zones and persist it. GM only. */
+export async function toggleZoneLink(scene, aId, bId) {
+  if (!scene || !game.user?.isGM || aId === bId) return;
+  const zones = getZones(scene);
+  const auto = buildAutoEdges(zones, (canvas?.grid?.size ?? 100) * 1.1);
+  let links = { added: [], removed: [] };
+  try { links = scene.getFlag?.(NS, "zoneLinks") ?? links; } catch (_) { /* ignore */ }
+  const next = toggleLink(auto, links, aId, bId);
+  invalidateGraph();
+  await scene.setFlag(NS, "zoneLinks", next);
 }
 
 /** Zones + adjacency graph for the scene, cached until regions/links change. */
