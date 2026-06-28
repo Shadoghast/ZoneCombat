@@ -10,15 +10,16 @@
  * and edit/anchor markers stay on this (interface) layer, ABOVE tokens.
  */
 import { ZONE_COMBAT } from "./config.mjs";
-import { getFillAlpha, getThresholds, getBoundaryWidth, getBoundaryColor, getMode } from "./settings.mjs";
+import { getFillAlpha, getThresholds, getBoundaryWidth, getBoundaryColor, getMode, getArmReach } from "./settings.mjs";
 import { getFocalTokenId, getEditedEdges } from "./turn.mjs";
 import { getMatrix } from "./store.mjs";
 import { originPoint, pixelsPerUnit, cellSize } from "./integration.mjs";
 import { computeZones } from "./grid-zones.mjs";
 import { zoneHighlights, ringsCentroid } from "./regions.mjs";
 
-const PENDING_COLOR = 0xffb000; // provisional edit marker (DESIGN.md §6.8)
-const DEAD_COLOR = 0x888888;    // inert dead-anchor marker (DESIGN.md §8.3)
+const PENDING_COLOR = 0xffb000;  // provisional edit marker (DESIGN.md §6.8)
+const DEAD_COLOR = 0x888888;     // inert dead-anchor marker (DESIGN.md §8.3)
+const ENGAGED_COLOR = 0xd61f1f;  // WHToW "Close" / arm's-reach engagement marker
 const BORDER_COLOR = 0xf3f1ff;  // crisp ring border (gridless fallback)
 const BORDER_ALPHA = 0.9;
 
@@ -184,6 +185,28 @@ export class ZoneCombatLayer extends CanvasLayerBase {
       t.anchor.set(0.5);
       t.position.set(c.x, c.y);
       this.labels.addChild(t);
+    }
+
+    // WHToW "Close": ring tokens within arm's reach of the active token (proximity
+    // override — works even across an adjacent zone edge).
+    this._drawCloseEngaged(active);
+  }
+
+  /** Mark tokens within arm's reach (Close / engaged) of the active token. */
+  _drawCloseEngaged(active) {
+    const g = this.marks;
+    if (!active?.center || !g) return;
+    const reach = getArmReach();
+    const cell = cellSize();
+    const dead = new Set(getMatrix(canvas.scene).deadAnchors ?? []);
+    for (const t of canvas.tokens?.placeables ?? []) {
+      if (t === active || !t.center || dead.has(t.id)) continue;
+      const spaces = Math.hypot(active.center.x - t.center.x, active.center.y - t.center.y) / cell;
+      if (spaces <= reach + 1e-6) {
+        const r = Math.max(t.w ?? 0, t.h ?? 0) / 2 + 6;
+        g.lineStyle(3, ENGAGED_COLOR, 1);
+        g.drawCircle(t.center.x, t.center.y, r);
+      }
     }
   }
 

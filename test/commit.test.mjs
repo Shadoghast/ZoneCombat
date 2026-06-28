@@ -12,7 +12,7 @@ const dist = (p, a, b) => Math.hypot(p[a].x - p[b].x, p[a].y - p[b].y);
 
 // Default five-band bucketer (Close5/Near10/Medium30/Long60/Far).
 const bandForDistance = (ft) =>
-  ft <= 5 ? "close" : ft <= 10 ? "near" : ft <= 30 ? "medium" : ft <= 60 ? "long" : "far";
+  ft <= 5 ? "close" : ft <= 10 ? "short" : ft <= 30 ? "medium" : ft <= 60 ? "long" : "extreme";
 
 test("schematicRadii: cumulative, normalised to maxRadius", () => {
   const r = schematicRadii([3, 4, 3, 2, 2], 140); // sum 14

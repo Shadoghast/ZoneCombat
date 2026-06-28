@@ -36,7 +36,7 @@ export function bandInterval(key, bands = resolvedBands()) {
  */
 export function representativeDistance(key, prior, farNominal = getFarNominal()) {
   const [min, max] = bandInterval(key);
-  if (key === "far") return prior > min ? prior : farNominal;
+  if (key === "extreme") return prior > min ? prior : farNominal;
   const p = Number.isFinite(prior) ? prior : (min + max) / 2;
   return Math.min(Math.max(p, min), max);
 }

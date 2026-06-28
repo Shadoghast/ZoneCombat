@@ -111,7 +111,7 @@ export function computeZones(scene = canvas?.scene) {
       if (!Number.isFinite(spaces)) continue;
 
       const band = bandForDistance(spaces * unitPerCell);
-      if (band === "far") continue; // Far is open-ended; left as background
+      if (band === "extreme") continue; // Extreme is open-ended; left as background
       tiles.push({ points: cellPolygon(grid, off, center), color: colorForBand(band), band });
     }
   }

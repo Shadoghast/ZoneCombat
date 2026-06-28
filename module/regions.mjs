@@ -5,7 +5,6 @@
  * relative to the active token's zone. The graph math itself lives in zone-graph.mjs.
  */
 import { ZONE_COMBAT } from "./config.mjs";
-import { bandForDistance } from "./bands.mjs";
 import {
   buildAutoEdges, applyOverrides, buildGraph, hopDistance, pointInRings
 } from "./zone-graph.mjs";
@@ -19,11 +18,16 @@ function colorForBand(key) {
   return ZONE_COMBAT.bands.find(b => b.key === key)?.color ?? 0xffffff;
 }
 
-/** Bucket a zone-hop count into a band using the "zones" unit thresholds. */
+/**
+ * Map a zone-hop count to a WHToW band. Close is NOT here — it is a proximity override
+ * (arm's reach) handled separately. Same zone (0) = Short, 1 = Medium, 2 = Long, 3+ = Extreme.
+ */
 export function bandForHops(hops) {
-  const t = ZONE_COMBAT.units.zones.thresholds;
-  const bands = ZONE_COMBAT.bands.map(b => ({ ...b, max: b.key === "far" ? Infinity : t[b.key] }));
-  return bandForDistance(hops, bands);
+  if (!Number.isFinite(hops)) return "extreme";
+  if (hops <= 0) return "short";
+  if (hops === 1) return "medium";
+  if (hops === 2) return "long";
+  return "extreme";
 }
 
 function rectRing(s) {

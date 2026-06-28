@@ -52,7 +52,7 @@ export function registerSettings() {
       name: `ZONECOMBAT.Settings.Weight.${b.key}`,
       scope: "world", config: true, type: Number, default: b.weight
     });
-    if (b.key !== "far") {
+    if (b.key !== "extreme") {
       // 0 = use the selected unit's default threshold; a positive value overrides it
       // (interpreted in the currently selected unit).
       game.settings.register(NS, `threshold.${b.key}`, {
@@ -76,6 +76,14 @@ export function registerSettings() {
     scope: "world", config: true, type: Boolean, default: true
   });
 
+  // Arm's reach (in grid spaces) for the WHToW "Close" proximity override in zones mode.
+  game.settings.register(NS, "armReach", {
+    name: "ZONECOMBAT.Settings.ArmReach",
+    hint: "ZONECOMBAT.Settings.ArmReachHint",
+    scope: "world", config: true, type: Number,
+    range: { min: 0.5, max: 4, step: 0.5 }, default: 1
+  });
+
   // Whisper a summary of propagated band changes to GMs at end of turn (§6.5).
   game.settings.register(NS, "logChanges", {
     name: "ZONECOMBAT.Settings.LogChanges",
@@ -94,6 +102,12 @@ export function getFillAlpha() {
 export function getBoundaryWidth() {
   const v = safeGet("boundaryWidth");
   return Number.isFinite(v) && v > 0 ? v : 4;
+}
+
+/** Arm's-reach distance (in grid spaces) for the Close proximity override. */
+export function getArmReach() {
+  const v = safeGet("armReach");
+  return Number.isFinite(v) && v > 0 ? v : 1;
 }
 
 /** Bold zone-boundary line colour as a 0xRRGGBB number. */
@@ -148,7 +162,7 @@ export function getVisualWeights() {
 export function getThresholds() {
   const u = unitConfig().thresholds;
   return ZONE_COMBAT.bands.map(b => {
-    if (b.key === "far") return Infinity;
+    if (b.key === "extreme") return Infinity;
     const override = safeGet(`threshold.${b.key}`);
     return Number.isFinite(override) && override > 0 ? override : u[b.key];
   });

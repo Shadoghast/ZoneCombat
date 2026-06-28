@@ -1,9 +1,9 @@
 {
   "ZONECOMBAT.Band.Close": "Close",
-  "ZONECOMBAT.Band.Near": "Near",
+  "ZONECOMBAT.Band.Short": "Short",
   "ZONECOMBAT.Band.Medium": "Medium",
   "ZONECOMBAT.Band.Long": "Long",
-  "ZONECOMBAT.Band.Far": "Far",
+  "ZONECOMBAT.Band.Extreme": "Extreme",
 
   "ZONECOMBAT.Control.Toggle": "Toggle Zone Combat overlay",
 
@@ -25,13 +25,16 @@
   "ZONECOMBAT.Settings.LogChangesHint": "Whisper a summary of band changes to GMs when a turn ends.",
 
   "ZONECOMBAT.Settings.Weight.close": "Visual weight — Close",
-  "ZONECOMBAT.Settings.Weight.near": "Visual weight — Near",
+  "ZONECOMBAT.Settings.Weight.short": "Visual weight — Short",
   "ZONECOMBAT.Settings.Weight.medium": "Visual weight — Medium",
   "ZONECOMBAT.Settings.Weight.long": "Visual weight — Long",
-  "ZONECOMBAT.Settings.Weight.far": "Visual weight — Far",
+  "ZONECOMBAT.Settings.Weight.extreme": "Visual weight — Extreme",
 
   "ZONECOMBAT.Settings.Threshold.close": "Threshold — Close (0 = auto)",
-  "ZONECOMBAT.Settings.Threshold.near": "Threshold — Near (0 = auto)",
+  "ZONECOMBAT.Settings.Threshold.short": "Threshold — Short (0 = auto)",
   "ZONECOMBAT.Settings.Threshold.medium": "Threshold — Medium (0 = auto)",
-  "ZONECOMBAT.Settings.Threshold.long": "Threshold — Long (0 = auto)"
+  "ZONECOMBAT.Settings.Threshold.long": "Threshold — Long (0 = auto)",
+
+  "ZONECOMBAT.Settings.ArmReach": "Arm's reach (spaces)",
+  "ZONECOMBAT.Settings.ArmReachHint": "Distance (grid spaces) counted as Close / engaged in drawn-zone mode, even across an adjacent zone edge."
 }
