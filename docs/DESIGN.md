@@ -29,6 +29,8 @@ History: an earlier draft used six bands (Close 5 / Near 10 / Medium 30 / Long 6
 
 ## 3. Canvas Rendering — Schematic Shells
 
+> ⚠️ **Superseded (as of v0.6.0).** This section describes the original *schematic* model — concentric shells whose size came from per-band **visual weights** (inner big, outer compressed), centered on the focal token. That model and the visual-weight settings were **removed**. Rendering is now **true-to-grid**: in **bands mode** each zone is the set of actual hex/square cells within its distance threshold of the (cell-snapped) **scene centre** — tiled cells, not compressed rings (gridless falls back to true-scale circles), and the active token is *moved* to the centre with the others arranged into the rings (§7). In **drawn-zone mode** (§10) regions are coloured by hop band. Kept below as design history; §6 (propagation), §7 (layout solver), §8 (lifecycle) remain accurate.
+
 Each focal token is surrounded by **concentric range shells**, one per band. The shells are deliberately **schematic, not to scale**: the inner bands (Close / Near / Medium) — where most tactical decisions happen — are drawn large, and the outer bands (Long / Far) are compressed into thin rings. This keeps the overlay legible and prevents the long-range bands from blanketing the entire canvas on large scenes.
 
 ### Shape follows the grid
@@ -60,12 +62,9 @@ The shells are drawn **directly on the scene canvas** as an overlay around the f
 
 Both of the following are GM-editable, **per band**. They are independent: the visual knob never affects mechanics; the distance knob does.
 
-### 4.1 Visual proportion (presentation only)
+### 4.1 Visual proportion (presentation only) — **REMOVED (v0.8.2)**
 
-How much screen space each band's shell occupies in the schematic — the inner-vs-outer weighting. Changing this never changes who can hit whom.
-
-- **Scope:** per-scene, with a **world-level default**. (A cramped dungeon and an open field want different weightings; the GM sets a default once and overrides per scene as needed.)
-- **OPEN — control model:** per-band weight sliders (e.g. Close = 3, Near = 2, … normalized to fit the canvas) vs. named preset layouts ("Brawl," "Skirmish," "Open field") shipped with the module. (Proposed: per-band weights, with a few presets as starting points.)
+> Historical. The schematic inner-vs-outer weighting (and the per-band visual-weight settings) were removed when rendering switched to true-to-grid scale (§3 note). The live presentation knobs are now: zone **fill opacity**, **boundary thickness**, **boundary colour**, per-scene **background opacity**, and (zones mode) **arm's reach**.
 
 ### 4.2 Distance thresholds (mechanical)
 
