@@ -113,6 +113,11 @@ function hexToNumber(value, fallback) {
   return fallback;
 }
 
+/** Per-scene distance model: "bands" (concentric range bands) or "zones" (drawn zones). */
+export function getMode(scene = canvas?.scene) {
+  return scene?.getFlag?.(ZONE_COMBAT.id, "mode") === "zones" ? "zones" : "bands";
+}
+
 /** Selected distance unit key ("feet" | "spaces"). */
 export function getUnit() {
   const u = safeGet("unit");

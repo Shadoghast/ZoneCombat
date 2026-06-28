@@ -6,7 +6,7 @@
 import { ZONE_COMBAT } from "./config.mjs";
 import * as store from "./store.mjs";
 import { schematicRadii } from "./geometry.mjs";
-import { getVisualWeights, getThresholds, getUnit } from "./settings.mjs";
+import { getVisualWeights, getThresholds, getUnit, getMode } from "./settings.mjs";
 import { bandForDistance } from "./bands.mjs";
 import { planCommit } from "./commit.mjs";
 import { summarizeChanges } from "./changelog.mjs";
@@ -116,6 +116,7 @@ function sceneTokens(scene) {
 /** Geometry-seed any missing pairs for the scene's tokens (DESIGN.md §8.1). GM only. */
 export async function seedMissingPairs(scene = canvas?.scene) {
   if (!scene || !game.user?.isGM) return;
+  if (getMode(scene) === "zones") return; // no relative matrix in drawn-zone mode
   const tokens = sceneTokens(scene);
   if (tokens.length < 2) return;
   const matrix = store.getMatrix(scene);
@@ -180,6 +181,7 @@ export async function commitTurn(scene, outgoingFocalId, editedEdges = []) {
  */
 export async function arrangeForFocal(scene, focalId) {
   if (!scene || !focalId || !game.user?.isGM) return;
+  if (getMode(scene) === "zones") return; // tokens are not rearranged in drawn-zone mode
   if (!safeGet("applyLayout")) return;
 
   const origin = originPoint();

@@ -254,4 +254,16 @@ If the active/focal token is **removed or dies mid-turn** — before the batched
 - Matrix stored in a **persistent per-scene flag** (`scene.flags["zone-combat"]`), keyed by sorted token-id pairs — **decided**.
 - Mid-turn state shown with **provisional styling** (pending look until commit; propagated changes highlight at turn end) — **decided**.
 - Canvas drags are **bidirectional edits** (shell-drop snaps to band; free-drag re-derives from geometry), then repair — **decided**.
+- Second model added: **Drawn-Zone mode** (per-scene) — see §10 — **decided**.
+
+## 10. Drawn-Zone Mode (WFRP Old World / Fate style)
+
+A per-scene **mode** flag (`flags.zone-combat.mode` = `bands` | `zones`) selects the distance model. In **zones** mode the concentric range-band machinery (matrix, propagation, layout, drag-editing, token auto-arrange) is **disabled**; distance is derived live from drawn zones.
+
+- **Zones = Foundry Scene Regions.** Every region on the scene is a zone (unless flagged `zone-combat.exclude`). Region polygons are read as ring-sets.
+- **Adjacency (hybrid):** two zones auto-link if their boundaries touch / are within ~1 grid cell, or overlap. GM overrides are stored in `flags.zone-combat.zoneLinks = { added:[[a,b]], removed:[[a,b]] }`. (Override-editing UI is a follow-up; auto-detect works now.)
+- **Distance = zone hops.** BFS shortest path on the adjacency graph between the active token's zone and the target's zone. Same zone = 0, adjacent = 1, …; unreachable = ∞.
+- **Hops → bands.** Bucketed via a `zones` unit (defaults: Close 0, Near 1, Medium 2, Long 3, Far 4+), so the existing band vocabulary and everything downstream keep working.
+- **Rendering:** each region is filled by its band colour relative to the active token's zone, with the bold boundary stroke and a band-name label at the centroid. Tokens never move; players/GM position them normally and the colouring updates live.
+- **Pure core** (`module/zone-graph.mjs`): polygon adjacency, override merge, BFS, point-in-rings — unit-tested. Foundry glue in `module/regions.mjs`.
 - Foundry target: **v14+ only** — **decided**.

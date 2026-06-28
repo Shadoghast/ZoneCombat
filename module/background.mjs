@@ -33,11 +33,27 @@ export function injectSceneConfig(app, html) {
 
   // Remove any earlier (possibly mis-placed) injection so we can re-place cleanly.
   root.querySelector(`[name="flags.${NS}.${KEY}"]`)?.closest(".form-group")?.remove();
+  root.querySelector(`[name="flags.${NS}.mode"]`)?.closest(".form-group")?.remove();
 
   // Anchor: the Background Image field (<file-picker name="background.src">) in Basics.
   const bgGroup = root.querySelector('[name="background.src"]')?.closest(".form-group");
   if (!bgGroup?.parentNode) return; // basics part not rendered yet; a later render catches it
 
+  // Mode selector: range bands vs drawn zones (Scene Regions).
+  const mode = scene.getFlag?.(NS, "mode") === "zones" ? "zones" : "bands";
+  const modeGroup = document.createElement("div");
+  modeGroup.className = "form-group";
+  modeGroup.innerHTML = `
+    <label>Zone Combat Mode</label>
+    <div class="form-fields">
+      <select name="flags.${NS}.mode">
+        <option value="bands" ${mode === "bands" ? "selected" : ""}>Range bands (concentric)</option>
+        <option value="zones" ${mode === "zones" ? "selected" : ""}>Drawn zones (Scene Regions)</option>
+      </select>
+    </div>
+    <p class="hint">Zone Combat — how distance works on this scene.</p>`;
+
+  // Background opacity slider.
   const v = getBgOpacity(scene);
   const group = document.createElement("div");
   group.className = "form-group";
@@ -54,6 +70,7 @@ export function injectSceneConfig(app, html) {
   const readout = group.querySelector(".range-value");
   input?.addEventListener("input", () => { if (readout) readout.textContent = input.value; });
 
-  bgGroup.parentNode.insertBefore(group, bgGroup.nextSibling);
+  bgGroup.parentNode.insertBefore(modeGroup, bgGroup.nextSibling);
+  modeGroup.parentNode.insertBefore(group, modeGroup.nextSibling);
   app.setPosition?.({ height: "auto" });
 }

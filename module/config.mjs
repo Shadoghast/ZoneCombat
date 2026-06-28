@@ -28,7 +28,9 @@ export const ZONE_COMBAT = {
    */
   units: {
     feet:   { label: "ft",     thresholds: { close: 5, near: 10, medium: 30, long: 60 }, farNominal: 90 },
-    spaces: { label: "spaces", thresholds: { close: 1, near: 2,  medium: 6,  long: 12 }, farNominal: 18 }
+    spaces: { label: "spaces", thresholds: { close: 1, near: 2,  medium: 6,  long: 12 }, farNominal: 18 },
+    // Drawn-zone mode: distance is a zone-hop count. Same zone = Close, 1 hop = Near, etc.
+    zones:  { label: "zones",  thresholds: { close: 0, near: 1,  medium: 2,  long: 3  }, farNominal: 5 }
   },
 
   defaults: {

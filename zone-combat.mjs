@@ -11,6 +11,7 @@ import * as store from "./module/store.mjs";
 import * as integration from "./module/integration.mjs";
 import * as drag from "./module/drag.mjs";
 import * as background from "./module/background.mjs";
+import * as regions from "./module/regions.mjs";
 
 // Expose a small public API for debugging / future use.
 globalThis.zoneCombat = { config: ZONE_COMBAT, ZoneCombatLayer, turn, store };
@@ -53,7 +54,16 @@ Hooks.on("canvasReady", () => integration.seedMissingPairs(canvas?.scene));
 // Per-scene background dimming so zone tiles read clearly over the map.
 Hooks.on("renderSceneConfig", (app, html) => background.injectSceneConfig(app, html));
 Hooks.on("canvasReady", () => background.applyBackgroundOpacity(canvas?.scene));
-Hooks.on("updateScene", (scene) => background.applyBackgroundOpacity(scene));
+Hooks.on("updateScene", (scene) => {
+  background.applyBackgroundOpacity(scene);
+  regions.invalidateGraph();              // mode / zone-links may have changed
+  canvas?.zoneCombat?.requestRedraw?.();
+});
+
+// Drawn-zone mode: rebuild the zone graph and redraw when regions change.
+for (const hook of ["createRegion", "updateRegion", "deleteRegion", "canvasReady"]) {
+  Hooks.on(hook, () => { regions.invalidateGraph(); canvas?.zoneCombat?.requestRedraw?.(); });
+}
 
 // Interpret a user drag as a relational edit (DESIGN.md §7 bidirectional).
 Hooks.on("updateToken", (doc, change, options, userId) => drag.onTokenMoved(doc, change, options, userId));

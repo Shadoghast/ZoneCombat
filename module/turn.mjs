@@ -7,6 +7,7 @@
  * token.
  */
 import * as integration from "./integration.mjs";
+import { getMode } from "./settings.mjs";
 
 let _focalTokenId = null;
 let _editedThisTurn = new Set();
@@ -42,8 +43,9 @@ export async function onUpdateCombat(combat, changed) {
   if (!("turn" in (changed ?? {}) || "round" in (changed ?? {}))) return;
 
   const scene = canvas?.scene;
+  const zonesMode = getMode(scene) === "zones";
   const outgoing = _focalTokenId;
-  if (scene && game.user?.isGM && outgoing) {
+  if (!zonesMode && scene && game.user?.isGM && outgoing) {
     try {
       await integration.commitTurn(scene, outgoing, getEditedEdges());
     } catch (err) {
@@ -58,8 +60,8 @@ export async function onUpdateCombat(combat, changed) {
   const focal = isDead ? null : nextId;
   setFocalToken(focal);
 
-  // Static map: move the new active token to scene centre and arrange others around it.
-  if (scene && game.user?.isGM && focal) {
+  // Static map (bands mode only): move the active token to centre, arrange the rest.
+  if (!zonesMode && scene && game.user?.isGM && focal) {
     try { await integration.arrangeForFocal(scene, focal); }
     catch (err) { console.error("Zone Combat | arrange failed", err); }
   }
@@ -70,7 +72,7 @@ export async function onCombatStart(combat) {
   const scene = canvas?.scene;
   const focal = combat?.combatant?.tokenId ?? null;
   setFocalToken(focal);
-  if (scene && game.user?.isGM && focal) {
+  if (getMode(scene) !== "zones" && scene && game.user?.isGM && focal) {
     try { await integration.arrangeForFocal(scene, focal); }
     catch (err) { console.error("Zone Combat | arrange failed", err); }
   }

@@ -10,11 +10,12 @@
  * and edit/anchor markers stay on this (interface) layer, ABOVE tokens.
  */
 import { ZONE_COMBAT } from "./config.mjs";
-import { getFillAlpha, getThresholds, getBoundaryWidth, getBoundaryColor } from "./settings.mjs";
+import { getFillAlpha, getThresholds, getBoundaryWidth, getBoundaryColor, getMode } from "./settings.mjs";
 import { getFocalTokenId, getEditedEdges } from "./turn.mjs";
 import { getMatrix } from "./store.mjs";
 import { originPoint, pixelsPerUnit, cellSize } from "./integration.mjs";
 import { computeZones } from "./grid-zones.mjs";
+import { zoneHighlights, ringsCentroid } from "./regions.mjs";
 
 const PENDING_COLOR = 0xffb000; // provisional edit marker (DESIGN.md §6.8)
 const DEAD_COLOR = 0x888888;    // inert dead-anchor marker (DESIGN.md §8.3)
@@ -91,6 +92,14 @@ export class ZoneCombatLayer extends CanvasLayerBase {
     this._clearLabels();
     if (!this._enabled) return;
 
+    // Drawn-zone mode: colour the Scene Regions by hop-distance instead of drawing shells.
+    if (getMode(canvas.scene) === "zones") {
+      this._drawZonesMode(g, getFillAlpha(), getBoundaryWidth(), getBoundaryColor());
+      this._drawPending(getFocalTokenId());
+      this._drawDeadAnchors();
+      return;
+    }
+
     const center = originPoint();
     const bands = ZONE_COMBAT.bands;
     const fillAlpha = getFillAlpha();
@@ -141,6 +150,41 @@ export class ZoneCombatLayer extends CanvasLayerBase {
     this._drawLabels(center, bands, outerR);
     this._drawPending(getFocalTokenId());
     this._drawDeadAnchors();
+  }
+
+  /** Drawn-zone mode: fill each Scene Region by its band relative to the active token's zone. */
+  _drawZonesMode(g, fillAlpha, boundaryWidth, boundaryColor) {
+    const id = getFocalTokenId();
+    const active = (id && canvas.tokens?.get(id)) || canvas.tokens?.controlled?.[0] || null;
+    const highlights = zoneHighlights(canvas.scene, active);
+
+    for (const z of highlights) {
+      g.lineStyle(0);
+      g.beginFill(z.color, fillAlpha);
+      for (const ring of z.rings) g.drawPolygon(ring);
+      g.endFill();
+    }
+    for (const z of highlights) {
+      g.lineStyle(boundaryWidth, boundaryColor, BORDER_ALPHA);
+      for (const ring of z.rings) g.drawPolygon(ring);
+    }
+
+    if (!this.labels) return;
+    const size = cellSize();
+    const fontSize = Math.max(12, Math.round(size * 0.22));
+    const style = {
+      fontFamily: "Signika, sans-serif", fontSize, fill: 0xffffff,
+      stroke: 0x111111, strokeThickness: Math.max(2, Math.round(fontSize / 5)), align: "center"
+    };
+    for (const z of highlights) {
+      const c = ringsCentroid(z.rings);
+      const key = ZONE_COMBAT.bands.find(b => b.key === z.band)?.label ?? z.band;
+      const text = game.i18n?.localize?.(key) ?? z.band;
+      const t = new PIXI.Text(text, style);
+      t.anchor.set(0.5);
+      t.position.set(c.x, c.y);
+      this.labels.addChild(t);
+    }
   }
 
   _clearLabels() {

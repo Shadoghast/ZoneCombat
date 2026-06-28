@@ -11,7 +11,7 @@
 import * as store from "./store.mjs";
 import { getFocalTokenId, markEdited } from "./turn.mjs";
 import { representativeDistance, bandForDistance } from "./bands.mjs";
-import { getFarNominal } from "./settings.mjs";
+import { getFarNominal, getMode } from "./settings.mjs";
 import { measureDistance, isApplyingLayout, originPoint, pixelsPerUnit } from "./integration.mjs";
 
 /** Re-derive a token's whole row from true geometry (DESIGN.md §7 free-drag). */
@@ -33,6 +33,9 @@ export async function onTokenMoved(tokenDoc, change, options, userId) {
   if (!game.user?.isGM) return;
   const scene = tokenDoc?.parent;
   if (!scene || scene !== canvas?.scene) return;
+
+  // Drawn-zone mode: distance is derived from regions, not drag edits — just refresh.
+  if (getMode(scene) === "zones") { canvas?.zoneCombat?.requestRedraw?.(); return; }
 
   const matrix = store.getMatrix(scene);
   const id = tokenDoc.id;
